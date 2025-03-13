@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 export const Dashboard = () => {
   const { user } = useAuth();
@@ -91,10 +92,18 @@ export const Dashboard = () => {
           <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user?.username}!</h1>
           <p className="text-muted-foreground mt-1">Here's what's happening with your crypto journey.</p>
         </div>
-        <Button className="w-full md:w-auto">
-          <Gift className="mr-2 h-4 w-4" />
-          Discover New Airdrops
-        </Button>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button className="w-full md:w-auto">
+              <Gift className="mr-2 h-4 w-4" />
+              Discover New Airdrops
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <h2 className="text-xl font-bold">Coming Soon!</h2>
+            <p className="mt-2">New airdrops will be available soon. Check back later!</p>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <motion.div 
@@ -212,10 +221,18 @@ export const Dashboard = () => {
                       2 days left
                     </div>
                   </div>
-                  <Button variant="secondary" className="mt-1" size="sm">
-                    View Details
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="secondary" className="mt-1" size="sm">
+                        View Details
+                        <ChevronRight className="ml-1 h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <h2 className="text-xl font-bold">Arbitrum Airdrop</h2>
+                      <p className="mt-2">Details about the Arbitrum airdrop will be available soon.</p>
+                    </DialogContent>
+                  </Dialog>
                 </div>
 
                 <div className="bg-secondary/30 p-4 rounded-lg flex flex-col gap-2">
@@ -228,10 +245,18 @@ export const Dashboard = () => {
                       Now Live
                     </div>
                   </div>
-                  <Button variant="secondary" className="mt-1" size="sm">
-                    Join Testnet
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="secondary" className="mt-1" size="sm">
+                        Join Testnet
+                        <ChevronRight className="ml-1 h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <h2 className="text-xl font-bold">LayerZero Testnet</h2>
+                      <p className="mt-2">Details about the LayerZero testnet will be available soon.</p>
+                    </DialogContent>
+                  </Dialog>
                 </div>
 
                 <div className="bg-secondary/30 p-4 rounded-lg flex flex-col gap-2">
@@ -244,10 +269,18 @@ export const Dashboard = () => {
                       Coming soon
                     </div>
                   </div>
-                  <Button variant="secondary" className="mt-1" size="sm">
-                    Get Notified
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="secondary" className="mt-1" size="sm">
+                        Get Notified
+                        <ChevronRight className="ml-1 h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <h2 className="text-xl font-bold">Weekly Video Summary</h2>
+                      <p className="mt-2">Get notified when new videos are uploaded by UmarCryptospace.</p>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
             </CardContent>
