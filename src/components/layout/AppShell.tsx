@@ -27,6 +27,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 interface AppShellProps {
   children: ReactNode;
@@ -61,20 +62,30 @@ export const AppShell = ({ children }: AppShellProps) => {
         {/* Header */}
         <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b border-border flex h-16 items-center justify-between px-4 md:px-6">
           <div className="flex items-center">
-            <SheetTrigger asChild className="md:hidden mr-4">
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
+            <Sheet>
+              <SheetTrigger asChild className="md:hidden mr-4">
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+            </Sheet>
             <div className="hidden md:block text-xl font-semibold">
               CryptoTrack
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon">
-              <Bell className="h-5 w-5" />
-            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Bell className="h-5 w-5" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <h2 className="text-xl font-bold">Notifications</h2>
+                <p className="mt-2">You have no new notifications at this time.</p>
+              </DialogContent>
+            </Dialog>
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
