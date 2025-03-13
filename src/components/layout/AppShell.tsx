@@ -12,7 +12,6 @@ import {
   Menu,
   Settings,
   User,
-  X,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -41,6 +40,19 @@ export const AppShell = ({ children }: AppShellProps) => {
   const handleLogout = () => {
     logout();
     navigate("/login");
+  };
+
+  // Handle navigation to ensure we only navigate to existing routes
+  const handleNavigation = (path: string) => {
+    // List of valid routes in the application
+    const validRoutes = ["/", "/dashboard", "/profile", "/settings", "/login", "/register"];
+    
+    if (validRoutes.includes(path)) {
+      navigate(path);
+    } else {
+      console.warn(`Attempted to navigate to non-existent route: ${path}`);
+      navigate("/dashboard"); // Fallback to dashboard
+    }
   };
 
   return (
@@ -102,11 +114,11 @@ export const AppShell = ({ children }: AppShellProps) => {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/profile")}>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => handleNavigation("/profile")}>
                   <User className="mr-2 h-4 w-4" />
                   Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/settings")}>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => handleNavigation("/settings")}>
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
