@@ -20,6 +20,8 @@ export const RegisterForm = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const CORRECT_INVITE_CODE = "ishowcryptoairdrops";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -41,7 +43,7 @@ export const RegisterForm = () => {
       return;
     }
     
-    if (inviteCode !== "ishowcryptoairdrops") {
+    if (inviteCode.trim().toLowerCase() !== CORRECT_INVITE_CODE.toLowerCase()) {
       toast({
         title: "Invalid Invite Code",
         description: "The invite code you entered is incorrect",
@@ -57,7 +59,7 @@ export const RegisterForm = () => {
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Special access for video uploads
-      const isVideoCreator = email === "malickirfan00@gmail.com" && 
+      const isVideoCreator = email.toLowerCase() === "malickirfan00@gmail.com" && 
                             username === "UmarCryptospace" && 
                             password === "Irfan@123#13";
       
