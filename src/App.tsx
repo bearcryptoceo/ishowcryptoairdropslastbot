@@ -14,6 +14,9 @@ import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
 import Index from "@/pages/Index";
 import NotFound from "@/pages/NotFound";
+import Airdrops from "@/pages/Airdrops";
+import AirdropRankings from "@/pages/AirdropRankings";
+import { AirdropsProvider } from "@/contexts/AirdropsContext";
 
 const queryClient = new QueryClient();
 
@@ -101,6 +104,53 @@ const AppRoutes = () => {
         }
       />
       
+      {/* New Airdrops pages */}
+      <Route
+        path="/airdrops"
+        element={
+          <ProtectedRoute>
+            <Airdrops />
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/airdrops-ranking"
+        element={
+          <ProtectedRoute>
+            <AirdropRankings />
+          </ProtectedRoute>
+        }
+      />
+      
+      {/* Placeholder routes to prevent 404 errors */}
+      <Route
+        path="/testnets"
+        element={
+          <ProtectedRoute>
+            <NotFound />
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/tools"
+        element={
+          <ProtectedRoute>
+            <NotFound />
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/videos"
+        element={
+          <ProtectedRoute>
+            <NotFound />
+          </ProtectedRoute>
+        }
+      />
+      
       {/* 404 route */}
       <Route path="*" element={<NotFound />} />
     </Routes>
@@ -110,13 +160,15 @@ const AppRoutes = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </TooltipProvider>
+      <AirdropsProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </TooltipProvider>
+      </AirdropsProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

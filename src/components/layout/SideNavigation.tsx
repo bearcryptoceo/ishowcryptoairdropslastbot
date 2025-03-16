@@ -12,6 +12,7 @@ import {
   Plus,
   Users,
   BookOpen,
+  TrendingUp,
 } from "lucide-react";
 
 interface SideNavigationProps {
@@ -43,6 +44,11 @@ export const SideNavigation = ({ onNavigate }: SideNavigationProps) => {
       title: "Airdrops",
       href: "/airdrops",
       icon: Gift,
+    },
+    {
+      title: "Airdrops Ranking",
+      href: "/airdrops-ranking",
+      icon: TrendingUp,
     },
     {
       title: "Testnets",
@@ -94,10 +100,10 @@ export const SideNavigation = ({ onNavigate }: SideNavigationProps) => {
       <div className="p-4 mt-auto">
         <Button 
           className="w-full bg-primary h-11 font-medium" 
-          onClick={() => handleNavigate(location.pathname === "/airdrops" ? "/airdrops/add" : "/testnets/add")}
+          onClick={() => handleNavigate("/profile")}
         >
-          <Plus className="mr-2 h-5 w-5" />
-          {location.pathname === "/airdrops" ? "Add Airdrop" : "Add Testnet"}
+          <Users className="mr-2 h-5 w-5" />
+          Profile
         </Button>
       </div>
     </div>
