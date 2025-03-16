@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useTools } from "@/contexts/ToolsContext";
 import { useAuth } from "@/hooks/use-auth";
@@ -452,14 +451,17 @@ const Tools = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.keys(iconMap).map((iconName) => (
-                    <SelectItem key={iconName} value={iconName} className="flex items-center">
-                      <div className="flex items-center">
-                        {React.createElement(iconMap[iconName], { className: "h-4 w-4 mr-2" })}
-                        {iconName}
-                      </div>
-                    </SelectItem>
-                  ))}
+                  {Object.keys(iconMap).map((iconName) => {
+                    const IconComponent = iconMap[iconName];
+                    return (
+                      <SelectItem key={iconName} value={iconName} className="flex items-center">
+                        <div className="flex items-center">
+                          <IconComponent className="h-4 w-4 mr-2" />
+                          {iconName}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
