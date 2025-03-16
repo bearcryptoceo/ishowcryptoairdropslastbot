@@ -20,6 +20,8 @@ import Testnets from "@/pages/Testnets";
 import Tools from "@/pages/Tools";
 import Videos from "@/pages/Videos";
 import { AirdropsProvider } from "@/contexts/AirdropsContext";
+import { ToolsProvider } from "@/contexts/ToolsContext";
+import { TestnetsProvider } from "@/contexts/TestnetsContext";
 
 const queryClient = new QueryClient();
 
@@ -126,7 +128,7 @@ const AppRoutes = () => {
         }
       />
       
-      {/* Additional routes that were causing 404 errors */}
+      {/* Additional routes */}
       <Route
         path="/testnets"
         element={
@@ -164,13 +166,17 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <AirdropsProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </TooltipProvider>
+        <ToolsProvider>
+          <TestnetsProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <AppRoutes />
+              </BrowserRouter>
+            </TooltipProvider>
+          </TestnetsProvider>
+        </ToolsProvider>
       </AirdropsProvider>
     </AuthProvider>
   </QueryClientProvider>

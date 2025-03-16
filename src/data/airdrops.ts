@@ -1,4 +1,3 @@
-
 export interface Airdrop {
   id: string;
   name: string;
@@ -11,6 +10,12 @@ export interface Airdrop {
   tasks: string[];
   launchDate: string;
   isCompleted?: boolean;
+  isPinned?: boolean;
+  fundingAmount?: string;
+  rewards?: string;
+  timeCommitment?: string;
+  workRequired?: string;
+  links?: Array<{name: string, url: string}>;
 }
 
 export interface AirdropRanking {
@@ -20,6 +25,9 @@ export interface AirdropRanking {
   popularityRating: number; // 1-5
   potentialValue: string;
   notes: string;
+  telegramLink?: string;
+  rank?: number;
+  isPinned?: boolean;
 }
 
 // Initial airdrops data
@@ -394,7 +402,10 @@ export const initialRankings: AirdropRanking[] = [
     fundingRating: 5,
     popularityRating: 5,
     potentialValue: "Very High",
-    notes: "Major Layer 2 with significant backing and adoption"
+    notes: "Major Layer 2 with significant backing and adoption",
+    telegramLink: "https://t.me/arbitrum",
+    rank: 1,
+    isPinned: true
   },
   {
     id: "ranking-2",
@@ -402,7 +413,9 @@ export const initialRankings: AirdropRanking[] = [
     fundingRating: 5,
     popularityRating: 4,
     potentialValue: "High",
-    notes: "Established Layer 2 with Coinbase backing"
+    notes: "Established Layer 2 with Coinbase backing",
+    telegramLink: "https://t.me/optimismFND",
+    rank: 2
   },
   {
     id: "ranking-3",
@@ -410,6 +423,226 @@ export const initialRankings: AirdropRanking[] = [
     fundingRating: 4,
     popularityRating: 4,
     potentialValue: "High",
-    notes: "Innovative cross-chain protocol with good partnerships"
+    notes: "Innovative cross-chain protocol with good partnerships",
+    telegramLink: "https://t.me/layerzerolabs",
+    rank: 3
+  }
+];
+
+// Airdrop categories
+export const airdropCategories = [
+  "Layer 2",
+  "Layer 1",
+  "Infrastructure",
+  "DeFi",
+  "Top 10 Projects",
+  "Layer 1 & Testnet Mainnet",
+  "Telegram Bot Airdrops",
+  "Daily Check-in Airdrops",
+  "Twitter Airdrops",
+  "Social Airdrops",
+  "AI Airdrops",
+  "Wallet Airdrops",
+  "Exchange Airdrops"
+];
+
+// Tool categories
+export const toolCategories = [
+  "Wallet Connect",
+  "Airdrop Claim Checker",
+  "Gas Fee Calculator",
+  "Testnet Token Faucets",
+  "Crypto Wallet Extensions",
+  "Swaps & Bridges"
+];
+
+// Tool interface
+export interface Tool {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  link: string;
+  icon: string;
+  isCompleted?: boolean;
+  isPinned?: boolean;
+  comingSoon?: boolean;
+}
+
+// Initial tools
+export const initialTools: Tool[] = [
+  {
+    id: "tool-1",
+    name: "Gas Fee Calculator",
+    description: "Calculate gas fees across different blockchain networks",
+    category: "Gas Fee Calculator",
+    link: "https://ethgasstation.info/",
+    icon: "Calculator",
+    comingSoon: false
+  },
+  {
+    id: "tool-2",
+    name: "Wallet Tracker",
+    description: "Track your portfolio across multiple wallets",
+    category: "Wallet Connect",
+    link: "https://debank.com/",
+    icon: "Wallet",
+    comingSoon: false
+  },
+  {
+    id: "tool-3",
+    name: "Price Charts",
+    description: "Real-time price charts for all major cryptocurrencies",
+    category: "Crypto Wallet Extensions",
+    link: "https://www.coingecko.com/",
+    icon: "LineChart",
+    comingSoon: false
+  },
+  {
+    id: "tool-4",
+    name: "Token Explorer",
+    description: "Explore and analyze tokens across different blockchains",
+    category: "Airdrop Claim Checker",
+    link: "https://etherscan.io/",
+    icon: "Coins",
+    comingSoon: false
+  },
+  {
+    id: "tool-5",
+    name: "APY Calculator",
+    description: "Calculate potential yields from staking and farming",
+    category: "Gas Fee Calculator",
+    link: "https://www.aprtoapy.com/",
+    icon: "BarChart3",
+    comingSoon: false
+  },
+  {
+    id: "tool-6",
+    name: "Swap Aggregator",
+    description: "Find the best rates across decentralized exchanges",
+    category: "Swaps & Bridges",
+    link: "https://1inch.io/",
+    icon: "ArrowLeftRight",
+    comingSoon: false
+  }
+];
+
+// Testnet interface
+export interface Testnet {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  link: string;
+  logo: string;
+  estimatedReward: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  tasks: string[];
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  isCompleted?: boolean;
+  isPinned?: boolean;
+}
+
+// Initial testnets
+export const initialTestnets: Testnet[] = [
+  {
+    id: "testnet-1",
+    name: "LayerZero",
+    description: "Cross-chain communication protocol testnet",
+    category: "Layer 1 & Testnet Mainnet",
+    link: "https://layerzero.network",
+    logo: "https://cryptologos.cc/logos/placeholder.png",
+    estimatedReward: "$500-1000",
+    difficulty: "Medium",
+    tasks: ["Bridge assets", "Complete challenges", "Provide liquidity"],
+    startDate: "2023-01-15",
+    endDate: "2023-06-30",
+    isActive: true
+  },
+  {
+    id: "testnet-2",
+    name: "Arbitrum Nova",
+    description: "Optimistic rollup testnet for gaming and social applications",
+    category: "Layer 2",
+    link: "https://nova.arbitrum.io",
+    logo: "https://cryptologos.cc/logos/arbitrum-arb-logo.png",
+    estimatedReward: "$200-500",
+    difficulty: "Easy",
+    tasks: ["Deploy contracts", "Test transactions", "Complete quests"],
+    startDate: "2023-02-10",
+    endDate: "2023-07-15",
+    isActive: true
+  },
+  {
+    id: "testnet-3",
+    name: "Scroll",
+    description: "ZK rollup solution for Ethereum",
+    category: "Layer 2",
+    link: "https://scroll.io",
+    logo: "https://cryptologos.cc/logos/placeholder.png",
+    estimatedReward: "$300-800",
+    difficulty: "Medium",
+    tasks: ["Bridge ETH", "Deploy contracts", "Test transactions"],
+    startDate: "2023-03-05",
+    endDate: "2023-08-01",
+    isActive: true
+  },
+  {
+    id: "testnet-4",
+    name: "zkSync Era",
+    description: "Layer 2 scaling solution using ZK rollups",
+    category: "Layer 2",
+    link: "https://zksync.io",
+    logo: "https://cryptologos.cc/logos/placeholder.png",
+    estimatedReward: "$400-900",
+    difficulty: "Hard",
+    tasks: ["Deploy dApps", "Test cross-chain messaging", "Provide feedback"],
+    startDate: "2023-01-20",
+    endDate: "2023-09-15",
+    isActive: true
+  },
+  {
+    id: "testnet-5",
+    name: "Linea",
+    description: "Consensys ZK rollup solution",
+    category: "Layer 2",
+    link: "https://linea.build",
+    logo: "https://cryptologos.cc/logos/placeholder.png",
+    estimatedReward: "$200-600",
+    difficulty: "Easy",
+    tasks: ["Bridge ETH", "Swap tokens", "Deploy smart contracts"],
+    startDate: "2023-04-12",
+    endDate: "2023-10-30",
+    isActive: true
+  },
+  {
+    id: "testnet-6",
+    name: "Celestia",
+    description: "Modular blockchain network",
+    category: "Layer 1 & Testnet Mainnet",
+    link: "https://celestia.org",
+    logo: "https://cryptologos.cc/logos/celestia-tia-logo.png",
+    estimatedReward: "$300-700",
+    difficulty: "Medium",
+    tasks: ["Run a light node", "Validate transactions", "Participate in governance"],
+    startDate: "2023-03-28",
+    endDate: "2023-11-15",
+    isActive: true
+  },
+  {
+    id: "testnet-7",
+    name: "Taiko",
+    description: "Ethereum-equivalent ZK-rollup",
+    category: "Layer 2",
+    link: "https://taiko.xyz",
+    logo: "https://cryptologos.cc/logos/placeholder.png",
+    estimatedReward: "$200-600",
+    difficulty: "Medium",
+    tasks: ["Bridge assets", "Deploy contracts", "Test dApps"],
+    startDate: "2023-05-10",
+    endDate: "2023-12-20",
+    isActive: true
   }
 ];

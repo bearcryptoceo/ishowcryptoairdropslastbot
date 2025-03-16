@@ -1,14 +1,20 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { Airdrop, AirdropRanking, initialAirdrops, initialRankings } from "@/data/airdrops";
+import { Airdrop, AirdropRanking, initialAirdrops, initialRankings, airdropCategories } from "@/data/airdrops";
 
 interface AirdropsContextType {
   airdrops: Airdrop[];
   rankings: AirdropRanking[];
+  categories: string[];
   toggleCompleted: (id: string) => void;
+  togglePinned: (id: string) => void;
+  addAirdrop: (airdrop: Airdrop) => void;
+  updateAirdrop: (airdrop: Airdrop) => void;
+  deleteAirdrop: (id: string) => void;
   addRanking: (ranking: AirdropRanking) => void;
   updateRanking: (ranking: AirdropRanking) => void;
   deleteRanking: (id: string) => void;
+  addCategory: (category: string) => void;
 }
 
 const AirdropsContext = createContext<AirdropsContextType | undefined>(undefined);
@@ -16,6 +22,7 @@ const AirdropsContext = createContext<AirdropsContextType | undefined>(undefined
 export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
   const [airdrops, setAirdrops] = useState<Airdrop[]>([]);
   const [rankings, setRankings] = useState<AirdropRanking[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
     // Load airdrops from localStorage or use initial data
@@ -33,6 +40,14 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setRankings(initialRankings);
     }
+
+    // Load categories from localStorage or use initial data
+    const savedCategories = localStorage.getItem("airdrop_categories");
+    if (savedCategories) {
+      setCategories(JSON.parse(savedCategories));
+    } else {
+      setCategories(airdropCategories);
+    }
   }, []);
 
   // Save to localStorage whenever state changes
@@ -48,10 +63,38 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [rankings]);
 
+  useEffect(() => {
+    if (categories.length > 0) {
+      localStorage.setItem("airdrop_categories", JSON.stringify(categories));
+    }
+  }, [categories]);
+
   const toggleCompleted = (id: string) => {
     setAirdrops(airdrops.map(airdrop => 
       airdrop.id === id ? { ...airdrop, isCompleted: !airdrop.isCompleted } : airdrop
     ));
+  };
+
+  const togglePinned = (id: string) => {
+    setAirdrops(airdrops.map(airdrop => 
+      airdrop.id === id ? { ...airdrop, isPinned: !airdrop.isPinned } : airdrop
+    ));
+  };
+
+  const addAirdrop = (airdrop: Airdrop) => {
+    setAirdrops([...airdrops, airdrop]);
+  };
+
+  const updateAirdrop = (updatedAirdrop: Airdrop) => {
+    setAirdrops(airdrops.map(airdrop => 
+      airdrop.id === updatedAirdrop.id ? updatedAirdrop : airdrop
+    ));
+  };
+
+  const deleteAirdrop = (id: string) => {
+    setAirdrops(airdrops.filter(airdrop => airdrop.id !== id));
+    // Also delete any rankings associated with this airdrop
+    setRankings(rankings.filter(ranking => ranking.airdropId !== id));
   };
 
   const addRanking = (ranking: AirdropRanking) => {
@@ -68,15 +111,27 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
     setRankings(rankings.filter(ranking => ranking.id !== id));
   };
 
+  const addCategory = (category: string) => {
+    if (!categories.includes(category)) {
+      setCategories([...categories, category]);
+    }
+  };
+
   return (
     <AirdropsContext.Provider 
       value={{ 
         airdrops, 
         rankings,
-        toggleCompleted, 
+        categories,
+        toggleCompleted,
+        togglePinned, 
+        addAirdrop,
+        updateAirdrop,
+        deleteAirdrop,
         addRanking,
         updateRanking,
-        deleteRanking
+        deleteRanking,
+        addCategory
       }}
     >
       {children}
