@@ -47,7 +47,7 @@ export const SideNavigation = ({ onNavigate }: SideNavigationProps) => {
     },
     {
       title: "Airdrops Ranking",
-      href: "/airdrops-ranking",
+      href: "/airdrops-rankings",
       icon: TrendingUp,
     },
     {

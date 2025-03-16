@@ -1,82 +1,72 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useToast } from "@/hooks/use-toast";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-export const LoginForm = () => {
-  const [isLoading, setIsLoading] = useState(false);
+export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [inviteCode, setInviteCode] = useState("");
-  const { login } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [captcha, setCaptcha] = useState({ num1: 0, num2: 0, operator: '+', answer: 0 });
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
+  
+  const { login, generateCaptcha } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
 
-  const CORRECT_INVITE_CODE = "ishowcryptoairdrops";
+  useEffect(() => {
+    // Generate captcha on component mount
+    setCaptcha(generateCaptcha());
+  }, [generateCaptcha]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email || !password) {
       toast({
         title: "Error",
-        description: "Please enter both email and password",
+        description: "Please enter your email and password",
         variant: "destructive",
       });
       return;
     }
-    
-    if (inviteCode.trim().toLowerCase() !== CORRECT_INVITE_CODE.toLowerCase()) {
+
+    // Verify captcha
+    if (parseInt(captchaAnswer) !== captcha.answer) {
       toast({
-        title: "Invalid Invite Code",
-        description: "The invite code you entered is incorrect",
+        title: "Error",
+        description: "Incorrect captcha answer",
         variant: "destructive",
       });
+      setCaptcha(generateCaptcha());
+      setCaptchaAnswer("");
       return;
     }
-    
-    setIsLoading(true);
-    
+
     try {
-      // Simulating authentication
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      setIsLoading(true);
       
-      // Special access for video uploads
-      if (email.toLowerCase() === "malickirfan00@gmail.com" && password === "Irfan@123#13") {
-        login({
-          id: "admin123",
-          email,
-          username: "UmarCryptospace",
-          isVideoCreator: true
-        });
-        toast({
-          title: "Welcome back, UmarCryptospace!",
-          description: "You have video creator privileges",
-        });
-      } else {
-        login({
-          id: "user" + Math.floor(Math.random() * 10000),
-          email,
-          username: email.split("@")[0],
-          isVideoCreator: false
-        });
-        toast({
-          title: "Welcome back!",
-          description: "You've successfully logged in",
-        });
-      }
+      // In a real app, this would authenticate with a backend
+      // For this demo, we'll simulate a login
+      const isAdmin = email === "malickirfan00@gmail.com" && password === "Irfan@123#13";
       
-      navigate("/dashboard");
+      login({
+        id: "user-1",
+        email,
+        username: isAdmin ? "UmarCryptospace" : email.split('@')[0],
+        isVideoCreator: isAdmin,
+      });
+      
+      toast({
+        title: "Success",
+        description: "You have successfully logged in",
+      });
     } catch (error) {
       toast({
-        title: "Login Failed",
-        description: "An error occurred during login",
+        title: "Error",
+        description: "Invalid credentials",
         variant: "destructive",
       });
     } finally {
@@ -85,82 +75,68 @@ export const LoginForm = () => {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6"
-    >
-      <div className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold">Login</h1>
-        <p className="text-muted-foreground">Enter your credentials to access your account</p>
-      </div>
-      
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="your@email.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="h-11"
-            required
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
-            <Button variant="link" className="px-0 h-auto text-xs text-muted-foreground" type="button">
-              Forgot password?
-            </Button>
-          </div>
-          <Input
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="h-11"
-            required
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="inviteCode">Invite Code</Label>
-          <Input
-            id="inviteCode"
-            type="text"
-            placeholder="Enter your invite code"
-            value={inviteCode}
-            onChange={(e) => setInviteCode(e.target.value)}
-            className="h-11"
-            required
-          />
-        </div>
-        
-        <Button type="submit" className="w-full h-11" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Logging in...
-            </>
-          ) : (
-            "Login"
-          )}
-        </Button>
-      </form>
-      
-      <div className="text-center text-sm">
-        <p className="text-muted-foreground">
-          Don't have an account?{" "}
-          <Button variant="link" className="p-0 h-auto" onClick={() => navigate("/register")}>
-            Register
-          </Button>
+    <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+      <div className="flex flex-col space-y-2 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
+        <p className="text-sm text-muted-foreground">
+          Enter your credentials to continue
         </p>
       </div>
-    </motion.div>
+      <div className="grid gap-6">
+        <form onSubmit={handleLogin}>
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                placeholder="name@example.com"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoCapitalize="none"
+                autoComplete="email"
+                autoCorrect="off"
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="captcha">
+                Solve: {captcha.num1} {captcha.operator} {captcha.num2} = ?
+              </Label>
+              <Input
+                id="captcha"
+                placeholder="Enter answer"
+                value={captchaAnswer}
+                onChange={(e) => setCaptchaAnswer(e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Logging in..." : "Log in"}
+            </Button>
+          </div>
+        </form>
+      </div>
+      <p className="text-sm text-muted-foreground text-center">
+        Don&apos;t have an account?{" "}
+        <a
+          href="/register"
+          className="underline underline-offset-4 hover:text-primary"
+        >
+          Register
+        </a>
+      </p>
+    </div>
   );
-};
+}

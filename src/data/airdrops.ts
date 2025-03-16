@@ -431,29 +431,25 @@ export const initialRankings: AirdropRanking[] = [
 
 // Airdrop categories
 export const airdropCategories = [
-  "Layer 2",
-  "Layer 1",
-  "Infrastructure",
-  "DeFi",
-  "Top 10 Projects",
-  "Layer 1 & Testnet Mainnet",
-  "Telegram Bot Airdrops",
-  "Daily Check-in Airdrops",
-  "Twitter Airdrops",
-  "Social Airdrops",
-  "AI Airdrops",
-  "Wallet Airdrops",
-  "Exchange Airdrops"
+  "🏆 Top 10 Projects",
+  "🌐 Layer 1 & Testnet Mainnet",
+  "🤖 Telegram Bot Airdrops",
+  "📅 Daily Check-in Airdrops",
+  "🐦 Twitter Airdrops",
+  "📢 Social Airdrops",
+  "🤖 AI Airdrops",
+  "🔑 Wallet Airdrops",
+  "💱 Exchange Airdrops"
 ];
 
 // Tool categories
 export const toolCategories = [
-  "Wallet Connect",
-  "Airdrop Claim Checker",
-  "Gas Fee Calculator",
-  "Testnet Token Faucets",
-  "Crypto Wallet Extensions",
-  "Swaps & Bridges"
+  "🔗 Wallet Connect",
+  "🔍 Airdrop Claim Checker",
+  "⛽ Gas Fee Calculator",
+  "🏦 Testnet Token Faucets",
+  "🔑 Crypto Wallet Extensions",
+  "🔄 Swaps & Bridges"
 ];
 
 // Tool interface

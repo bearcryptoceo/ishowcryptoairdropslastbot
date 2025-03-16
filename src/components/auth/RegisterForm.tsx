@@ -1,39 +1,43 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useToast } from "@/hooks/use-toast";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { ExternalLink } from "lucide-react";
 
-export const RegisterForm = () => {
-  const [isLoading, setIsLoading] = useState(false);
+export function RegisterForm() {
   const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [inviteCode, setInviteCode] = useState("");
-  const { register } = useAuth();
+  const [username, setUsername] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [telegramVerified, setTelegramVerified] = useState(false);
+  const [showTelegramVerification, setShowTelegramVerification] = useState(false);
+  const [captcha, setCaptcha] = useState({ num1: 0, num2: 0, operator: '+', answer: 0 });
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
+  
+  const { register, validateTelegramJoin, generateCaptcha } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
 
-  const CORRECT_INVITE_CODE = "ishowcryptoairdrops";
+  useEffect(() => {
+    // Generate captcha on component mount
+    setCaptcha(generateCaptcha());
+  }, [generateCaptcha]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !username || !password || !confirmPassword) {
+    if (!email || !password || !username) {
       toast({
         title: "Error",
-        description: "Please fill out all fields",
+        description: "Please fill in all fields",
         variant: "destructive",
       });
       return;
     }
-    
+
     if (password !== confirmPassword) {
       toast({
         title: "Error",
@@ -42,46 +46,43 @@ export const RegisterForm = () => {
       });
       return;
     }
-    
-    if (inviteCode.trim().toLowerCase() !== CORRECT_INVITE_CODE.toLowerCase()) {
+
+    // Verify captcha
+    if (parseInt(captchaAnswer) !== captcha.answer) {
       toast({
-        title: "Invalid Invite Code",
-        description: "The invite code you entered is incorrect",
+        title: "Error",
+        description: "Incorrect captcha answer",
         variant: "destructive",
       });
+      setCaptcha(generateCaptcha());
+      setCaptchaAnswer("");
       return;
     }
-    
-    setIsLoading(true);
-    
+
+    // Verify Telegram join if not already verified
+    if (!telegramVerified) {
+      setShowTelegramVerification(true);
+      return;
+    }
+
     try {
-      // Simulating registration
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Special access for video uploads
-      const isVideoCreator = email.toLowerCase() === "malickirfan00@gmail.com" && 
-                            username === "UmarCryptospace" && 
-                            password === "Irfan@123#13";
+      setIsLoading(true);
       
       register({
-        id: "user" + Math.floor(Math.random() * 10000),
+        id: Date.now().toString(),
         email,
         username,
-        isVideoCreator
+        isVideoCreator: false
       });
       
       toast({
-        title: "Registration Successful",
-        description: isVideoCreator 
-          ? "Welcome UmarCryptospace! You have video creator privileges." 
-          : "Your account has been created successfully",
+        title: "Success",
+        description: "Your account has been created",
       });
-      
-      navigate("/dashboard");
     } catch (error) {
       toast({
-        title: "Registration Failed",
-        description: "An error occurred during registration",
+        title: "Error",
+        description: "Failed to create account. Email or username may already exist.",
         variant: "destructive",
       });
     } finally {
@@ -89,104 +90,161 @@ export const RegisterForm = () => {
     }
   };
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6"
-    >
-      <div className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold">Create an Account</h1>
-        <p className="text-muted-foreground">Enter your details to create your account</p>
-      </div>
+  const verifyTelegram = async () => {
+    try {
+      setIsLoading(true);
+      const verified = await validateTelegramJoin(username);
       
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="your@email.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="h-11"
-            required
-          />
+      if (verified) {
+        setTelegramVerified(true);
+        setShowTelegramVerification(false);
+        toast({
+          title: "Success",
+          description: "Telegram verification successful. Please complete your registration.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to verify Telegram join. Please make sure you've joined the channel.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Verification failed. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (showTelegramVerification) {
+    return (
+      <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+        <div className="flex flex-col space-y-2 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight">Telegram Verification</h1>
+          <p className="text-sm text-muted-foreground">
+            Please join our Telegram channel to continue registration
+          </p>
         </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="username">Username</Label>
-          <Input
-            id="username"
-            type="text"
-            placeholder="johndoe"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="h-11"
-            required
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="h-11"
-            required
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirm Password</Label>
-          <Input
-            id="confirmPassword"
-            type="password"
-            placeholder="••••••••"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="h-11"
-            required
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="inviteCode">Invite Code</Label>
-          <Input
-            id="inviteCode"
-            type="text"
-            placeholder="Enter your invite code"
-            value={inviteCode}
-            onChange={(e) => setInviteCode(e.target.value)}
-            className="h-11"
-            required
-          />
-        </div>
-        
-        <Button type="submit" className="w-full h-11" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Creating account...
-            </>
-          ) : (
-            "Register"
-          )}
-        </Button>
-      </form>
-      
-      <div className="text-center text-sm">
-        <p className="text-muted-foreground">
-          Already have an account?{" "}
-          <Button variant="link" className="p-0 h-auto" onClick={() => navigate("/login")}>
-            Login
+        <div className="flex flex-col space-y-4">
+          <a 
+            href="https://t.me/+EAqX3emRuOAwNTY1" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:underline flex items-center justify-center gap-1"
+          >
+            Join our Telegram Channel <ExternalLink className="h-4 w-4" />
+          </a>
+          <Button onClick={verifyTelegram} disabled={isLoading}>
+            {isLoading ? "Verifying..." : "I've Joined - Verify My Membership"}
           </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowTelegramVerification(false)}
+          >
+            Back to Registration
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+      <div className="flex flex-col space-y-2 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight">Create an account</h1>
+        <p className="text-sm text-muted-foreground">
+          Enter your details below to create your account
         </p>
       </div>
-    </motion.div>
+      <div className="grid gap-6">
+        <form onSubmit={handleRegister}>
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                placeholder="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoCapitalize="none"
+                autoComplete="username"
+                autoCorrect="off"
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                placeholder="name@example.com"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoCapitalize="none"
+                autoComplete="email"
+                autoCorrect="off"
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="captcha">
+                Solve: {captcha.num1} {captcha.operator} {captcha.num2} = ?
+              </Label>
+              <Input
+                id="captcha"
+                placeholder="Enter answer"
+                value={captchaAnswer}
+                onChange={(e) => setCaptchaAnswer(e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <input 
+                type="checkbox" 
+                id="telegramVerification"
+                checked={telegramVerified}
+                onChange={() => setShowTelegramVerification(true)}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <Label htmlFor="telegramVerification" className="text-sm">
+                I have joined the Telegram channel
+              </Label>
+            </div>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Creating account..." : "Create account"}
+            </Button>
+          </div>
+        </form>
+      </div>
+      <p className="text-sm text-muted-foreground text-center">
+        By creating an account, you agree to our terms and conditions
+      </p>
+    </div>
   );
-};
+}
