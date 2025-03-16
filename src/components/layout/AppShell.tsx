@@ -45,7 +45,19 @@ export const AppShell = ({ children }: AppShellProps) => {
   // Handle navigation to ensure we only navigate to existing routes
   const handleNavigation = (path: string) => {
     // List of valid routes in the application
-    const validRoutes = ["/", "/dashboard", "/profile", "/settings", "/login", "/register"];
+    const validRoutes = [
+      "/", 
+      "/dashboard", 
+      "/profile", 
+      "/settings", 
+      "/login", 
+      "/register", 
+      "/airdrops", 
+      "/airdrops-rankings", 
+      "/testnets", 
+      "/tools", 
+      "/videos"
+    ];
     
     if (validRoutes.includes(path)) {
       navigate(path);
@@ -82,7 +94,7 @@ export const AppShell = ({ children }: AppShellProps) => {
               </SheetTrigger>
             </Sheet>
             <div className="hidden md:block text-xl font-semibold">
-              CryptoTrack
+              ISHOW CRYPTO
             </div>
           </div>
 

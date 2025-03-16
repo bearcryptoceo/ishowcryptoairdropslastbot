@@ -16,6 +16,9 @@ import Index from "@/pages/Index";
 import NotFound from "@/pages/NotFound";
 import Airdrops from "@/pages/Airdrops";
 import AirdropRankings from "@/pages/AirdropRankings";
+import Testnets from "@/pages/Testnets";
+import Tools from "@/pages/Tools";
+import Videos from "@/pages/Videos";
 import { AirdropsProvider } from "@/contexts/AirdropsContext";
 
 const queryClient = new QueryClient();
@@ -104,7 +107,7 @@ const AppRoutes = () => {
         }
       />
       
-      {/* New Airdrops pages */}
+      {/* Airdrops pages */}
       <Route
         path="/airdrops"
         element={
@@ -115,7 +118,7 @@ const AppRoutes = () => {
       />
       
       <Route
-        path="/airdrops-ranking"
+        path="/airdrops-rankings"
         element={
           <ProtectedRoute>
             <AirdropRankings />
@@ -123,12 +126,12 @@ const AppRoutes = () => {
         }
       />
       
-      {/* Placeholder routes to prevent 404 errors */}
+      {/* Additional routes that were causing 404 errors */}
       <Route
         path="/testnets"
         element={
           <ProtectedRoute>
-            <NotFound />
+            <Testnets />
           </ProtectedRoute>
         }
       />
@@ -137,7 +140,7 @@ const AppRoutes = () => {
         path="/tools"
         element={
           <ProtectedRoute>
-            <NotFound />
+            <Tools />
           </ProtectedRoute>
         }
       />
@@ -146,7 +149,7 @@ const AppRoutes = () => {
         path="/videos"
         element={
           <ProtectedRoute>
-            <NotFound />
+            <Videos />
           </ProtectedRoute>
         }
       />

@@ -32,7 +32,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Edit,
+  ExternalLink,
+  Link as LinkIcon,
+  Pin,
+  PinOff,
   Plus,
   Star,
   Trash2,
@@ -54,20 +65,35 @@ const AirdropRankings = () => {
     popularityRating: 3,
     potentialValue: "",
     notes: "",
+    telegramLink: "",
+    rank: 0,
+    isPinned: false,
   });
 
   const isAdmin = user?.email === "malickirfan00@gmail.com" && user?.username === "UmarCryptospace";
 
-  // Get rankings with airdrop details
-  const rankingsWithDetails = rankings.map(ranking => {
-    const airdrop = airdrops.find(a => a.id === ranking.airdropId);
-    return {
-      ...ranking,
-      airdropName: airdrop?.name || "Unknown",
-      airdropLogo: airdrop?.logo || "",
-      airdropCategory: airdrop?.category || "Unknown",
-    };
-  });
+  // Get rankings with airdrop details and sort by pinned and rank
+  const rankingsWithDetails = rankings
+    .map(ranking => {
+      const airdrop = airdrops.find(a => a.id === ranking.airdropId);
+      return {
+        ...ranking,
+        airdropName: airdrop?.name || "Unknown",
+        airdropLogo: airdrop?.logo || "",
+        airdropCategory: airdrop?.category || "Unknown",
+        telegramLink: ranking.telegramLink || "",
+        rank: ranking.rank || 0,
+        isPinned: ranking.isPinned || false,
+      };
+    })
+    .sort((a, b) => {
+      // First sort by pinned status
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      
+      // Then sort by rank (lower number = higher rank)
+      return (a.rank || 999) - (b.rank || 999);
+    });
 
   // Handler for opening the edit dialog
   const handleEditRanking = (ranking: AirdropRanking) => {
@@ -78,6 +104,9 @@ const AirdropRankings = () => {
       popularityRating: ranking.popularityRating,
       potentialValue: ranking.potentialValue,
       notes: ranking.notes,
+      telegramLink: ranking.telegramLink || "",
+      rank: ranking.rank || 0,
+      isPinned: ranking.isPinned || false,
     });
     setIsDialogOpen(true);
   };
@@ -91,6 +120,9 @@ const AirdropRankings = () => {
       popularityRating: 3,
       potentialValue: "",
       notes: "",
+      telegramLink: "",
+      rank: 0,
+      isPinned: false,
     });
     setIsDialogOpen(true);
   };
@@ -101,6 +133,19 @@ const AirdropRankings = () => {
     toast({
       title: "Ranking deleted",
       description: "The airdrop ranking has been removed",
+    });
+  };
+
+  // Handler for toggling pinned status
+  const handleTogglePin = (ranking: AirdropRanking) => {
+    updateRanking({
+      ...ranking,
+      isPinned: !ranking.isPinned
+    });
+    
+    toast({
+      title: ranking.isPinned ? "Unpinned" : "Pinned",
+      description: `Airdrop has been ${ranking.isPinned ? "unpinned" : "pinned"} successfully`,
     });
   };
 
@@ -133,6 +178,9 @@ const AirdropRankings = () => {
         popularityRating: Number(formValues.popularityRating),
         potentialValue: formValues.potentialValue,
         notes: formValues.notes,
+        telegramLink: formValues.telegramLink,
+        rank: Number(formValues.rank),
+        isPinned: formValues.isPinned,
       });
       toast({
         title: "Ranking updated",
@@ -147,6 +195,9 @@ const AirdropRankings = () => {
         popularityRating: Number(formValues.popularityRating),
         potentialValue: formValues.potentialValue,
         notes: formValues.notes,
+        telegramLink: formValues.telegramLink,
+        rank: Number(formValues.rank),
+        isPinned: formValues.isPinned,
       });
       toast({
         title: "Ranking added",
@@ -234,18 +285,43 @@ const AirdropRankings = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12"></TableHead>
+                    <TableHead>Rank</TableHead>
                     <TableHead>Airdrop</TableHead>
                     <TableHead className="hidden md:table-cell">Category</TableHead>
                     <TableHead>Funding</TableHead>
                     <TableHead>Popularity</TableHead>
                     <TableHead>Potential Value</TableHead>
                     <TableHead className="hidden md:table-cell">Notes</TableHead>
+                    <TableHead>Links</TableHead>
                     {isAdmin && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {rankingsWithDetails.map((ranking) => (
-                    <TableRow key={ranking.id}>
+                    <TableRow key={ranking.id} className={ranking.isPinned ? "bg-primary/5" : ""}>
+                      <TableCell>
+                        {isAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleTogglePin(ranking)}
+                            className="h-8 w-8"
+                          >
+                            {ranking.isPinned ? (
+                              <PinOff className="h-4 w-4 text-primary" />
+                            ) : (
+                              <Pin className="h-4 w-4" />
+                            )}
+                          </Button>
+                        )}
+                        {!isAdmin && ranking.isPinned && (
+                          <Pin className="h-4 w-4 text-primary" />
+                        )}
+                      </TableCell>
+                      <TableCell className="font-medium text-center">
+                        {ranking.rank ? `#${ranking.rank}` : "-"}
+                      </TableCell>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
@@ -257,6 +333,11 @@ const AirdropRankings = () => {
                             />
                           </div>
                           <span>{ranking.airdropName}</span>
+                          {ranking.isPinned && (
+                            <span className="px-1.5 py-0.5 rounded text-xs bg-primary/20 text-primary">
+                              Featured
+                            </span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{ranking.airdropCategory}</TableCell>
@@ -278,6 +359,21 @@ const AirdropRankings = () => {
                       </TableCell>
                       <TableCell className="hidden md:table-cell max-w-[200px] truncate">
                         {ranking.notes}
+                      </TableCell>
+                      <TableCell>
+                        {ranking.telegramLink ? (
+                          <a 
+                            href={ranking.telegramLink} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-primary hover:underline"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-1" />
+                            Telegram
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">No link</span>
+                        )}
                       </TableCell>
                       {isAdmin && (
                         <TableCell className="text-right">
@@ -316,7 +412,7 @@ const AirdropRankings = () => {
 
       {/* Add/Edit Ranking Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[525px]">
+        <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
             <DialogTitle>{currentRanking ? "Edit Ranking" : "Add New Ranking"}</DialogTitle>
             <DialogDescription>
@@ -349,6 +445,18 @@ const AirdropRankings = () => {
               </select>
             </div>
             
+            <div className="space-y-2">
+              <Label htmlFor="rank">Ranking Position (0 = unranked)</Label>
+              <Input
+                id="rank"
+                type="number"
+                min="0"
+                max="999"
+                value={formValues.rank}
+                onChange={(e) => setFormValues({...formValues, rank: parseInt(e.target.value) || 0})}
+              />
+            </div>
+            
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="fundingRating">Funding Rating (1-5)</Label>
@@ -360,6 +468,9 @@ const AirdropRankings = () => {
                   value={formValues.fundingRating}
                   onChange={(e) => setFormValues({...formValues, fundingRating: parseInt(e.target.value)})}
                 />
+                <div className="flex mt-1">
+                  {renderStars(formValues.fundingRating)}
+                </div>
               </div>
               
               <div className="space-y-2">
@@ -372,6 +483,9 @@ const AirdropRankings = () => {
                   value={formValues.popularityRating}
                   onChange={(e) => setFormValues({...formValues, popularityRating: parseInt(e.target.value)})}
                 />
+                <div className="flex mt-1">
+                  {renderStars(formValues.popularityRating)}
+                </div>
               </div>
             </div>
             
@@ -389,6 +503,36 @@ const AirdropRankings = () => {
                 <option value="Medium">Medium</option>
                 <option value="Low">Low</option>
               </select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="telegramLink">Telegram Link</Label>
+              <div className="flex">
+                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground">
+                  <LinkIcon className="h-4 w-4" />
+                </span>
+                <Input
+                  id="telegramLink"
+                  type="url"
+                  placeholder="https://t.me/..."
+                  value={formValues.telegramLink}
+                  onChange={(e) => setFormValues({...formValues, telegramLink: e.target.value})}
+                  className="rounded-l-none"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="isPinned" className="flex items-center gap-2">
+                <input
+                  id="isPinned"
+                  type="checkbox"
+                  checked={formValues.isPinned}
+                  onChange={(e) => setFormValues({...formValues, isPinned: e.target.checked})}
+                  className="form-checkbox h-4 w-4"
+                />
+                Pin to top of rankings
+              </Label>
             </div>
             
             <div className="space-y-2">

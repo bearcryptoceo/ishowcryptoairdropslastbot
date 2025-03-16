@@ -52,10 +52,10 @@ const Index = () => {
       <header className="border-b border-border/40 backdrop-blur-sm bg-background/80 fixed top-0 w-full z-50">
         <div className="container mx-auto flex justify-between items-center h-16 px-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">C</span>
+            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-lg">I</span>
             </div>
-            <span className="text-xl font-bold">CryptoTrack</span>
+            <span className="text-xl font-bold">ISHOW CRYPTO</span>
           </div>
           
           <div className="hidden md:flex items-center gap-8">
@@ -187,44 +187,43 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Videos Preview Section */}
+      {/* Video Tutorial Section */}
       <section id="videos" className="py-20 px-4">
         <div className="container mx-auto">
           <motion.div 
-            className="text-center max-w-3xl mx-auto mb-16"
+            className="text-center max-w-3xl mx-auto mb-12"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
             variants={fadeIn}
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Learn From Crypto Experts</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">How To Use ISHOW CRYPTO Airdrop Tracker</h2>
             <p className="text-xl text-muted-foreground">
-              Watch our curated collection of videos to learn about the latest opportunities in the crypto space.
+              Watch our tutorial to learn how to get the most out of the ISHOW CRYPTO platform
             </p>
           </motion.div>
           
-          <motion.div 
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+          <motion.div
+            className="max-w-4xl mx-auto"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            variants={staggerContainer}
+            variants={fadeIn}
           >
-            {[1, 2, 3].map((_, index) => (
-              <motion.div 
-                key={index}
-                className="glass-card rounded-xl overflow-hidden glass-card-hover"
-                variants={fadeIn}
-              >
-                <div className="aspect-video bg-gradient-to-br from-primary/40 via-accent/20 to-secondary/30 relative flex items-center justify-center">
-                  <Play className="h-12 w-12 text-white" />
+            <div className="aspect-video rounded-xl overflow-hidden shadow-xl bg-gradient-to-br from-primary/20 via-secondary/10 to-background glass-card">
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center p-8">
+                  <div className="w-20 h-20 rounded-full bg-primary/20 backdrop-blur-lg flex items-center justify-center mx-auto mb-6">
+                    <Play className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">How to Use ISHOW CRYPTO Airdrop Tracker</h3>
+                  <p className="text-muted-foreground mb-4">Learn how to track airdrops, participate in testnets, and maximize your rewards</p>
+                  <Button variant="outline" className="mx-auto">
+                    <Play className="mr-2 h-4 w-4" /> Watch Tutorial
+                  </Button>
                 </div>
-                <div className="p-4">
-                  <h3 className="text-lg font-bold mb-1">How to Join the Latest Testnet</h3>
-                  <p className="text-sm text-muted-foreground">By UmarCryptospace</p>
-                </div>
-              </motion.div>
-            ))}
+              </div>
+            </div>
           </motion.div>
           
           <div className="text-center mt-12">
@@ -265,9 +264,9 @@ const Index = () => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center gap-2 mb-6 md:mb-0">
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">C</span>
+                <span className="text-primary-foreground font-bold text-lg">I</span>
               </div>
-              <span className="text-xl font-bold">CryptoTrack</span>
+              <span className="text-xl font-bold">ISHOW CRYPTO</span>
             </div>
             
             <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8 mb-6 md:mb-0">
@@ -287,7 +286,7 @@ const Index = () => {
           </div>
           
           <div className="mt-12 text-center text-sm text-muted-foreground">
-            <p>© 2023 CryptoTrack. All rights reserved.</p>
+            <p>© 2023 ISHOW CRYPTO. All rights reserved.</p>
           </div>
         </div>
       </footer>
