@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,6 +18,8 @@ import AirdropRankings from "@/pages/AirdropRankings";
 import Testnets from "@/pages/Testnets";
 import Tools from "@/pages/Tools";
 import Videos from "@/pages/Videos";
+import Learn from "@/pages/Learn";
+import Explore from "@/pages/Explore";
 import { AirdropsProvider } from "@/contexts/AirdropsContext";
 import { ToolsProvider } from "@/contexts/ToolsContext";
 import { TestnetsProvider } from "@/contexts/TestnetsContext";
@@ -152,6 +153,25 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Videos />
+          </ProtectedRoute>
+        }
+      />
+      
+      {/* Learn and Explore routes */}
+      <Route
+        path="/learn"
+        element={
+          <ProtectedRoute>
+            <Learn />
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/explore"
+        element={
+          <ProtectedRoute>
+            <Explore />
           </ProtectedRoute>
         }
       />

@@ -13,6 +13,8 @@ import {
   Users,
   BookOpen,
   TrendingUp,
+  Compass,
+  Book,
 } from "lucide-react";
 
 interface SideNavigationProps {
@@ -64,6 +66,16 @@ export const SideNavigation = ({ onNavigate }: SideNavigationProps) => {
       title: "Videos",
       href: "/videos",
       icon: Play,
+    },
+    {
+      title: "Learn",
+      href: "/learn",
+      icon: BookOpen,
+    },
+    {
+      title: "Explore",
+      href: "/explore",
+      icon: Compass,
     },
   ];
 
