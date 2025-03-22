@@ -1,11 +1,21 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Airdrop, AirdropRanking, initialAirdrops, initialRankings, airdropCategories } from "@/data/airdrops";
+
+export interface Event {
+  id: string;
+  title: string;
+  subtitle: string;
+  status: "upcoming" | "live" | "coming_soon";
+  timeLeft?: string;
+  buttonText: string;
+  buttonAction: string;
+}
 
 interface AirdropsContextType {
   airdrops: Airdrop[];
   rankings: AirdropRanking[];
   categories: string[];
+  events: Event[];
   toggleCompleted: (id: string) => void;
   togglePinned: (id: string) => void;
   addAirdrop: (airdrop: Airdrop) => void;
@@ -17,17 +27,48 @@ interface AirdropsContextType {
   addCategory: (category: string) => void;
   clearAllAirdrops: () => void;
   clearPreAddedRankings: () => void;
+  addEvent: (event: Event) => void;
+  updateEvent: (event: Event) => void;
+  deleteEvent: (id: string) => void;
 }
 
 const AirdropsContext = createContext<AirdropsContextType | undefined>(undefined);
+
+const initialEvents: Event[] = [
+  {
+    id: "event-1",
+    title: "Arbitrum Airdrop Snapshot",
+    subtitle: "Layer 1 & Testnet",
+    status: "upcoming",
+    timeLeft: "2 days left",
+    buttonText: "View Details",
+    buttonAction: "view_details"
+  },
+  {
+    id: "event-2",
+    title: "LayerZero Testnet Phase 2",
+    subtitle: "Bridge Mining",
+    status: "live",
+    buttonText: "Join Testnet",
+    buttonAction: "join_testnet"
+  },
+  {
+    id: "event-3",
+    title: "Weekly Video Summary",
+    subtitle: "By UmarCryptospace",
+    status: "coming_soon",
+    buttonText: "Get Notified",
+    buttonAction: "get_notified"
+  }
+];
 
 export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
   const [airdrops, setAirdrops] = useState<Airdrop[]>([]);
   const [rankings, setRankings] = useState<AirdropRanking[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
 
   useEffect(() => {
-    // Load airdrops from localStorage or use initial data
     const savedAirdrops = localStorage.getItem("airdrops");
     if (savedAirdrops) {
       setAirdrops(JSON.parse(savedAirdrops));
@@ -35,7 +76,6 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
       setAirdrops(initialAirdrops);
     }
 
-    // Load rankings from localStorage or use initial data
     const savedRankings = localStorage.getItem("airdrop_rankings");
     if (savedRankings) {
       setRankings(JSON.parse(savedRankings));
@@ -43,26 +83,29 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
       setRankings(initialRankings);
     }
 
-    // Load categories from localStorage or use initial data
     const savedCategories = localStorage.getItem("airdrop_categories");
     if (savedCategories) {
       const parsedCategories = JSON.parse(savedCategories);
-      // Add "My Ethereum 2.0 Airdrop" if it doesn't exist
       if (!parsedCategories.includes("My Ethereum 2.0 Airdrop")) {
         parsedCategories.push("My Ethereum 2.0 Airdrop");
       }
       setCategories(parsedCategories);
     } else {
-      // Add "My Ethereum 2.0 Airdrop" to initial categories
       const updatedCategories = [...airdropCategories];
       if (!updatedCategories.includes("My Ethereum 2.0 Airdrop")) {
         updatedCategories.push("My Ethereum 2.0 Airdrop");
       }
       setCategories(updatedCategories);
     }
+
+    const savedEvents = localStorage.getItem("upcoming_events");
+    if (savedEvents) {
+      setEvents(JSON.parse(savedEvents));
+    } else {
+      setEvents(initialEvents);
+    }
   }, []);
 
-  // Save to localStorage whenever state changes
   useEffect(() => {
     localStorage.setItem("airdrops", JSON.stringify(airdrops));
   }, [airdrops]);
@@ -74,6 +117,10 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     localStorage.setItem("airdrop_categories", JSON.stringify(categories));
   }, [categories]);
+
+  useEffect(() => {
+    localStorage.setItem("upcoming_events", JSON.stringify(events));
+  }, [events]);
 
   const toggleCompleted = (id: string) => {
     setAirdrops(airdrops.map(airdrop => 
@@ -99,7 +146,6 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteAirdrop = (id: string) => {
     setAirdrops(airdrops.filter(airdrop => airdrop.id !== id));
-    // Also delete any rankings associated with this airdrop
     setRankings(rankings.filter(ranking => ranking.airdropId !== id));
   };
 
@@ -123,16 +169,28 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Clear all airdrops (delete all pre-added airdrops)
   const clearAllAirdrops = () => {
     setAirdrops([]);
     localStorage.setItem("airdrops", JSON.stringify([]));
   };
 
-  // Clear pre-added rankings
   const clearPreAddedRankings = () => {
     setRankings([]);
     localStorage.setItem("airdrop_rankings", JSON.stringify([]));
+  };
+
+  const addEvent = (event: Event) => {
+    setEvents([...events, event]);
+  };
+
+  const updateEvent = (updatedEvent: Event) => {
+    setEvents(events.map(event => 
+      event.id === updatedEvent.id ? updatedEvent : event
+    ));
+  };
+
+  const deleteEvent = (id: string) => {
+    setEvents(events.filter(event => event.id !== id));
   };
 
   return (
@@ -141,6 +199,7 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
         airdrops, 
         rankings,
         categories,
+        events,
         toggleCompleted,
         togglePinned, 
         addAirdrop,
@@ -151,7 +210,10 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
         deleteRanking,
         addCategory,
         clearAllAirdrops,
-        clearPreAddedRankings
+        clearPreAddedRankings,
+        addEvent,
+        updateEvent,
+        deleteEvent
       }}
     >
       {children}
