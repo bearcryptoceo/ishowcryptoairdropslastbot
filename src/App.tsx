@@ -55,6 +55,28 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Main App component with all providers
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <AirdropsProvider>
+        <ToolsProvider>
+          <TestnetsProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <AppRoutes />
+              </BrowserRouter>
+            </TooltipProvider>
+          </TestnetsProvider>
+        </ToolsProvider>
+      </AirdropsProvider>
+    </AuthProvider>
+  </QueryClientProvider>
+);
+
+// Separated routes component
 const AppRoutes = () => {
   return (
     <Routes>
@@ -182,25 +204,5 @@ const AppRoutes = () => {
     </Routes>
   );
 };
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <AirdropsProvider>
-        <ToolsProvider>
-          <TestnetsProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <AppRoutes />
-              </BrowserRouter>
-            </TooltipProvider>
-          </TestnetsProvider>
-        </ToolsProvider>
-      </AirdropsProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
 
 export default App;

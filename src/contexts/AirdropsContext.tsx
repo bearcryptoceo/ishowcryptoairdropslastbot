@@ -15,6 +15,8 @@ interface AirdropsContextType {
   updateRanking: (ranking: AirdropRanking) => void;
   deleteRanking: (id: string) => void;
   addCategory: (category: string) => void;
+  clearAllAirdrops: () => void;
+  clearPreAddedRankings: () => void;
 }
 
 const AirdropsContext = createContext<AirdropsContextType | undefined>(undefined);
@@ -44,29 +46,33 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
     // Load categories from localStorage or use initial data
     const savedCategories = localStorage.getItem("airdrop_categories");
     if (savedCategories) {
-      setCategories(JSON.parse(savedCategories));
+      const parsedCategories = JSON.parse(savedCategories);
+      // Add "My Ethereum 2.0 Airdrop" if it doesn't exist
+      if (!parsedCategories.includes("My Ethereum 2.0 Airdrop")) {
+        parsedCategories.push("My Ethereum 2.0 Airdrop");
+      }
+      setCategories(parsedCategories);
     } else {
-      setCategories(airdropCategories);
+      // Add "My Ethereum 2.0 Airdrop" to initial categories
+      const updatedCategories = [...airdropCategories];
+      if (!updatedCategories.includes("My Ethereum 2.0 Airdrop")) {
+        updatedCategories.push("My Ethereum 2.0 Airdrop");
+      }
+      setCategories(updatedCategories);
     }
   }, []);
 
   // Save to localStorage whenever state changes
   useEffect(() => {
-    if (airdrops.length > 0) {
-      localStorage.setItem("airdrops", JSON.stringify(airdrops));
-    }
+    localStorage.setItem("airdrops", JSON.stringify(airdrops));
   }, [airdrops]);
 
   useEffect(() => {
-    if (rankings.length > 0) {
-      localStorage.setItem("airdrop_rankings", JSON.stringify(rankings));
-    }
+    localStorage.setItem("airdrop_rankings", JSON.stringify(rankings));
   }, [rankings]);
 
   useEffect(() => {
-    if (categories.length > 0) {
-      localStorage.setItem("airdrop_categories", JSON.stringify(categories));
-    }
+    localStorage.setItem("airdrop_categories", JSON.stringify(categories));
   }, [categories]);
 
   const toggleCompleted = (id: string) => {
@@ -117,6 +123,18 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Clear all airdrops (delete all pre-added airdrops)
+  const clearAllAirdrops = () => {
+    setAirdrops([]);
+    localStorage.setItem("airdrops", JSON.stringify([]));
+  };
+
+  // Clear pre-added rankings
+  const clearPreAddedRankings = () => {
+    setRankings([]);
+    localStorage.setItem("airdrop_rankings", JSON.stringify([]));
+  };
+
   return (
     <AirdropsContext.Provider 
       value={{ 
@@ -131,7 +149,9 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
         addRanking,
         updateRanking,
         deleteRanking,
-        addCategory
+        addCategory,
+        clearAllAirdrops,
+        clearPreAddedRankings
       }}
     >
       {children}
