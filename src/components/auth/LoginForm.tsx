@@ -48,25 +48,25 @@ export function LoginForm() {
     try {
       setIsLoading(true);
       
-      // In a real app, this would authenticate with a backend
-      // For this demo, we'll simulate a login
-      const isAdmin = email === "malickirfan00@gmail.com" && password === "Irfan@123#13";
+      // Use the updated login function that now returns a boolean
+      const success = login(email, password);
       
-      login({
-        id: "user-1",
-        email,
-        username: isAdmin ? "UmarCryptospace" : email.split('@')[0],
-        isVideoCreator: isAdmin,
-      });
-      
-      toast({
-        title: "Success",
-        description: "You have successfully logged in",
-      });
+      if (success) {
+        toast({
+          title: "Success",
+          description: "You have successfully logged in",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Invalid credentials or user not found",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Invalid credentials",
+        description: "Something went wrong during login",
         variant: "destructive",
       });
     } finally {

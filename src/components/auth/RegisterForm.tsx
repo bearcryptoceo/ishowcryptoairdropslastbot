@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -68,21 +67,25 @@ export function RegisterForm() {
     try {
       setIsLoading(true);
       
-      register({
-        id: Date.now().toString(),
-        email,
-        username,
-        isVideoCreator: false
-      });
+      // Use the updated register function that returns a boolean
+      const success = register(email, username, password);
       
-      toast({
-        title: "Success",
-        description: "Your account has been created",
-      });
+      if (success) {
+        toast({
+          title: "Success",
+          description: "Your account has been created",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to create account. Email or username may already exist.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to create account. Email or username may already exist.",
+        description: "Something went wrong during registration",
         variant: "destructive",
       });
     } finally {

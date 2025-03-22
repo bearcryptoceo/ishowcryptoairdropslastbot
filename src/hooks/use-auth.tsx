@@ -11,8 +11,8 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (user: User) => void;
-  register: (user: User) => void;
+  login: (email: string, password: string) => boolean;
+  register: (email: string, username: string, password: string) => boolean;
   logout: () => void;
   isAuthenticated: boolean;
   validateTelegramJoin: (username: string) => Promise<boolean>;
@@ -24,6 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Admin credentials
 const ADMIN_EMAIL = "malickirfan00@gmail.com";
 const ADMIN_USERNAME = "UmarCryptospace";
+const ADMIN_PASSWORD = "Irfan@123#13";
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -74,48 +75,86 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const login = (userData: User) => {
-    // Check if the user is admin
-    const isAdmin = userData.email === ADMIN_EMAIL && userData.username === ADMIN_USERNAME;
+  const login = (email: string, password: string): boolean => {
+    // Get all registered users
+    const storedUsers = localStorage.getItem("crypto_tracker_users") || "[]";
+    const users = JSON.parse(storedUsers);
     
+    // Check if user exists with matching email and password
+    const matchedUser = users.find((u: any) => 
+      u.email === email && u.password === password
+    );
+    
+    if (!matchedUser) {
+      // Special case for admin login
+      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+        const adminUser = {
+          id: "admin-1",
+          email: ADMIN_EMAIL,
+          username: ADMIN_USERNAME,
+          isVideoCreator: true,
+          isAdmin: true
+        };
+        
+        setUser(adminUser);
+        setIsAuthenticated(true);
+        localStorage.setItem("crypto_tracker_user", JSON.stringify(adminUser));
+        return true;
+      }
+      return false;
+    }
+    
+    // Create user with admin flag if applicable
     const userWithRoles = {
-      ...userData,
-      isAdmin
+      ...matchedUser,
+      isAdmin: matchedUser.email === ADMIN_EMAIL && matchedUser.username === ADMIN_USERNAME
     };
+    
+    delete userWithRoles.password; // Don't store password in session
     
     setUser(userWithRoles);
     setIsAuthenticated(true);
     localStorage.setItem("crypto_tracker_user", JSON.stringify(userWithRoles));
+    return true;
   };
 
-  const register = (userData: User) => {
+  const register = (email: string, username: string, password: string): boolean => {
     // Check if another user with same email or username already exists
     const storedUsers = localStorage.getItem("crypto_tracker_users") || "[]";
     const users = JSON.parse(storedUsers);
     
-    const emailExists = users.some((u: User) => u.email === userData.email);
-    const usernameExists = users.some((u: User) => u.username === userData.username);
+    const emailExists = users.some((u: any) => u.email === email);
+    const usernameExists = users.some((u: any) => u.username === username);
     
     if (emailExists || usernameExists) {
-      throw new Error("Email or username already exists");
+      return false;
     }
     
     // Check if the user is admin
-    const isAdmin = userData.email === ADMIN_EMAIL && userData.username === ADMIN_USERNAME;
+    const isAdmin = email === ADMIN_EMAIL && username === ADMIN_USERNAME && password === ADMIN_PASSWORD;
     
-    const userWithRoles = {
-      ...userData,
+    const newUser = {
+      id: `user-${Date.now()}`,
+      email,
+      username,
+      password, // Store password for login verification
+      isVideoCreator: isAdmin,
       isAdmin
     };
     
     // Add user to users list
-    users.push(userWithRoles);
+    users.push(newUser);
     localStorage.setItem("crypto_tracker_users", JSON.stringify(users));
     
+    // Create session user without password
+    const sessionUser = { ...newUser };
+    delete sessionUser.password;
+    
     // Log the user in
-    setUser(userWithRoles);
+    setUser(sessionUser);
     setIsAuthenticated(true);
-    localStorage.setItem("crypto_tracker_user", JSON.stringify(userWithRoles));
+    localStorage.setItem("crypto_tracker_user", JSON.stringify(sessionUser));
+    return true;
   };
 
   const logout = () => {
