@@ -70,6 +70,7 @@ const AirdropRankings = () => {
     isPinned: false,
   });
 
+  // Check if user is admin - updated to match the specification
   const isAdmin = user?.email === "malickirfan00@gmail.com" && user?.username === "UmarCryptospace";
 
   // Get rankings with airdrop details and sort by pinned and rank

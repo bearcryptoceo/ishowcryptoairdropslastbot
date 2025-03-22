@@ -49,7 +49,7 @@ export const SideNavigation = ({ onNavigate }: SideNavigationProps) => {
     },
     {
       title: "Airdrops Ranking",
-      href: "/airdrops-rankings",
+      href: "/airdrop-rankings", // Fixed the URL path to match the correct route
       icon: TrendingUp,
     },
     {
