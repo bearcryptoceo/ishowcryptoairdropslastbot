@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useAirdrops } from "@/contexts/AirdropsContext";
@@ -49,6 +48,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Airdrop } from "@/data/airdrops";
+import AirdropItem from "@/components/airdrops/AirdropItem";
 
 const Airdrops = () => {
   const { airdrops, toggleCompleted, categories, addCategory, updateAirdrop, deleteAirdrop, addAirdrop, clearAllAirdrops } = useAirdrops();
@@ -74,7 +74,7 @@ const Airdrops = () => {
   });
 
   // Check if user is admin
-  const isAdmin = user?.email === "malickirfan00@gmail.com" && user?.username === "UmarCryptospace";
+  const isAdmin = user?.isAdmin;
 
   // Filter airdrops based on search, category, and difficulty
   const filteredAirdrops = airdrops.filter((airdrop) => {
@@ -93,35 +93,7 @@ const Airdrops = () => {
   // Stats for the dashboard
   const completedCount = airdrops.filter(airdrop => airdrop.isCompleted).length;
   const progressPercentage = airdrops.length > 0 ? (completedCount / airdrops.length) * 100 : 0;
-
-  // Handle toggling airdrop completion
-  const handleToggleComplete = (id: string) => {
-    toggleCompleted(id);
-    const airdrop = airdrops.find(a => a.id === id);
-    
-    toast({
-      title: airdrop?.isCompleted ? "Airdrop marked as incomplete" : "Airdrop marked as complete",
-      description: `You've updated the status of ${airdrop?.name}`,
-    });
-  };
-
-  // Handle edit airdrop
-  const handleEditAirdrop = (airdrop: Airdrop) => {
-    setCurrentAirdrop(airdrop);
-    setFormValues({
-      name: airdrop.name,
-      description: airdrop.description,
-      category: airdrop.category,
-      link: airdrop.link,
-      logo: airdrop.logo,
-      estimatedValue: airdrop.estimatedValue,
-      difficulty: airdrop.difficulty,
-      tasks: airdrop.tasks || [],
-      launchDate: airdrop.launchDate,
-    });
-    setIsDialogOpen(true);
-  };
-
+  
   // Handle add new airdrop
   const handleAddAirdrop = () => {
     setCurrentAirdrop(null);
@@ -191,16 +163,6 @@ const Airdrops = () => {
     }
 
     setIsDialogOpen(false);
-  };
-
-  // Handle delete airdrop
-  const handleDeleteAirdrop = (id: string) => {
-    const airdrop = airdrops.find(a => a.id === id);
-    deleteAirdrop(id);
-    toast({
-      title: "Airdrop deleted",
-      description: `${airdrop?.name} has been deleted successfully`,
-    });
   };
 
   // Handle add new category
@@ -384,32 +346,38 @@ const Airdrops = () => {
           <TabsTrigger value="all">All Airdrops</TabsTrigger>
           <TabsTrigger value="completed">Completed</TabsTrigger>
           <TabsTrigger value="pending">Pending</TabsTrigger>
+          <TabsTrigger value="ethereum">My Ethereum 2.0 Airdrop</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all">
           <AirdropsList 
             airdrops={filteredAirdrops} 
-            handleToggleComplete={handleToggleComplete}
-            handleEditAirdrop={handleEditAirdrop}
-            handleDeleteAirdrop={handleDeleteAirdrop}
+            container={container}
+            item={item}
           />
         </TabsContent>
 
         <TabsContent value="completed">
           <AirdropsList 
             airdrops={filteredAirdrops.filter(a => a.isCompleted)} 
-            handleToggleComplete={handleToggleComplete}
-            handleEditAirdrop={handleEditAirdrop}
-            handleDeleteAirdrop={handleDeleteAirdrop}
+            container={container}
+            item={item}
           />
         </TabsContent>
 
         <TabsContent value="pending">
           <AirdropsList 
             airdrops={filteredAirdrops.filter(a => !a.isCompleted)} 
-            handleToggleComplete={handleToggleComplete}
-            handleEditAirdrop={handleEditAirdrop}
-            handleDeleteAirdrop={handleDeleteAirdrop}
+            container={container}
+            item={item}
+          />
+        </TabsContent>
+        
+        <TabsContent value="ethereum">
+          <AirdropsList 
+            airdrops={filteredAirdrops.filter(a => a.category === "My Ethereum 2.0 Airdrop")}
+            container={container}
+            item={item}
           />
         </TabsContent>
       </Tabs>
@@ -597,27 +565,11 @@ const Airdrops = () => {
 
 type AirdropsListProps = {
   airdrops: Airdrop[];
-  handleToggleComplete: (id: string) => void;
-  handleEditAirdrop: (airdrop: Airdrop) => void;
-  handleDeleteAirdrop: (id: string) => void;
+  container: any;
+  item: any;
 };
 
-const AirdropsList = ({ airdrops, handleToggleComplete, handleEditAirdrop, handleDeleteAirdrop }: AirdropsListProps) => {
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
-  };
-
+const AirdropsList = ({ airdrops, container, item }: AirdropsListProps) => {
   if (airdrops.length === 0) {
     return (
       <div className="text-center py-12">
@@ -635,76 +587,7 @@ const AirdropsList = ({ airdrops, handleToggleComplete, handleEditAirdrop, handl
       className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
     >
       {airdrops.map((airdrop) => (
-        <motion.div key={airdrop.id} variants={item}>
-          <Card className={`transition-all duration-300 overflow-hidden ${airdrop.isCompleted ? 'border-green-500 bg-green-50/10' : ''}`}>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
-                    <img 
-                      src={airdrop.logo} 
-                      alt={airdrop.name} 
-                      className="h-full w-full object-cover"
-                      onError={(e) => (e.currentTarget.src = "https://cryptologos.cc/logos/placeholder.png")}
-                    />
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl">{airdrop.name}</CardTitle>
-                    <CardDescription className="text-xs">{airdrop.category}</CardDescription>
-                  </div>
-                </div>
-                <Badge variant={airdrop.difficulty === "Easy" ? "outline" : airdrop.difficulty === "Medium" ? "secondary" : "destructive"}>
-                  {airdrop.difficulty}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">{airdrop.description}</p>
-              
-              <div className="space-y-1">
-                <div className="text-sm font-medium">Est. Value:</div>
-                <div className="text-primary font-semibold">{airdrop.estimatedValue}</div>
-              </div>
-              
-              <div className="space-y-1">
-                <div className="text-sm font-medium">Status:</div>
-                <div className={`font-semibold ${airdrop.isCompleted ? 'text-green-500' : 'text-amber-500'}`}>
-                  {airdrop.isCompleted ? 'Completed' : 'Pending'}
-                </div>
-              </div>
-              
-              <div className="flex flex-wrap gap-2 pt-2">
-                <Button 
-                  variant={airdrop.isCompleted ? "outline" : "default"}
-                  className={`flex-1 ${airdrop.isCompleted ? 'border-green-500 text-green-500 hover:bg-green-50' : ''}`}
-                  onClick={() => handleToggleComplete(airdrop.id)}
-                >
-                  {airdrop.isCompleted ? (
-                    <>
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      Completed
-                    </>
-                  ) : (
-                    'Mark as Complete'
-                  )}
-                </Button>
-                
-                <Button variant="outline" size="icon" className="shrink-0" onClick={() => handleEditAirdrop(airdrop)}>
-                  <Edit className="h-4 w-4" />
-                </Button>
-                
-                <Button variant="outline" size="icon" className="shrink-0 text-destructive hover:bg-destructive/10" onClick={() => handleDeleteAirdrop(airdrop.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-                
-                <Button variant="outline" className="flex-1" onClick={() => window.open(airdrop.link, '_blank')}>
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Visit Site
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+        <AirdropItem key={airdrop.id} airdrop={airdrop} />
       ))}
     </motion.div>
   );

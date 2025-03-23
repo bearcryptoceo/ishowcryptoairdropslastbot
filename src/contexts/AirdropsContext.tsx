@@ -9,6 +9,7 @@ export interface Event {
   timeLeft?: string;
   buttonText: string;
   buttonAction: string;
+  link?: string;
 }
 
 interface AirdropsContextType {
@@ -16,6 +17,7 @@ interface AirdropsContextType {
   rankings: AirdropRanking[];
   categories: string[];
   events: Event[];
+  completedAirdrops: Airdrop[];
   toggleCompleted: (id: string) => void;
   togglePinned: (id: string) => void;
   addAirdrop: (airdrop: Airdrop) => void;
@@ -42,7 +44,8 @@ const initialEvents: Event[] = [
     status: "upcoming",
     timeLeft: "2 days left",
     buttonText: "View Details",
-    buttonAction: "view_details"
+    buttonAction: "view_details",
+    link: "https://arbitrum.io"
   },
   {
     id: "event-2",
@@ -50,7 +53,8 @@ const initialEvents: Event[] = [
     subtitle: "Bridge Mining",
     status: "live",
     buttonText: "Join Testnet",
-    buttonAction: "join_testnet"
+    buttonAction: "join_testnet",
+    link: "https://layerzero.network"
   },
   {
     id: "event-3",
@@ -67,20 +71,21 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
   const [rankings, setRankings] = useState<AirdropRanking[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
+  const [completedAirdrops, setCompletedAirdrops] = useState<Airdrop[]>([]);
 
   useEffect(() => {
     const savedAirdrops = localStorage.getItem("airdrops");
     if (savedAirdrops) {
       setAirdrops(JSON.parse(savedAirdrops));
     } else {
-      setAirdrops(initialAirdrops);
+      setAirdrops([]);
     }
 
     const savedRankings = localStorage.getItem("airdrop_rankings");
     if (savedRankings) {
       setRankings(JSON.parse(savedRankings));
     } else {
-      setRankings(initialRankings);
+      setRankings([]);
     }
 
     const savedCategories = localStorage.getItem("airdrop_categories");
@@ -104,6 +109,13 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setEvents(initialEvents);
     }
+
+    const savedCompletedAirdrops = localStorage.getItem("completed_airdrops");
+    if (savedCompletedAirdrops) {
+      setCompletedAirdrops(JSON.parse(savedCompletedAirdrops));
+    } else {
+      setCompletedAirdrops([]);
+    }
   }, []);
 
   useEffect(() => {
@@ -121,6 +133,10 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     localStorage.setItem("upcoming_events", JSON.stringify(events));
   }, [events]);
+
+  useEffect(() => {
+    localStorage.setItem("completed_airdrops", JSON.stringify(completedAirdrops));
+  }, [completedAirdrops]);
 
   const toggleCompleted = (id: string) => {
     setAirdrops(airdrops.map(airdrop => 
@@ -200,6 +216,7 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
         rankings,
         categories,
         events,
+        completedAirdrops,
         toggleCompleted,
         togglePinned, 
         addAirdrop,

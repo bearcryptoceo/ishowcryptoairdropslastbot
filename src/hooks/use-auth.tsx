@@ -76,13 +76,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const login = (email: string, password: string): boolean => {
-    // Get all registered users
+    // Check if users exist in localStorage and use default empty array if not
     const storedUsers = localStorage.getItem("crypto_tracker_users") || "[]";
     const users = JSON.parse(storedUsers);
     
-    // Check if user exists with matching email and password
+    // Check if user exists with matching email and password - case insensitive for email
     const matchedUser = users.find((u: any) => 
-      u.email === email && u.password === password
+      u.email.toLowerCase() === email.toLowerCase() && u.password === password
     );
     
     if (!matchedUser) {
@@ -119,12 +119,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const register = (email: string, username: string, password: string): boolean => {
-    // Check if another user with same email or username already exists
+    // Check if users exist in localStorage and use default empty array if not
     const storedUsers = localStorage.getItem("crypto_tracker_users") || "[]";
     const users = JSON.parse(storedUsers);
     
-    const emailExists = users.some((u: any) => u.email === email);
-    const usernameExists = users.some((u: any) => u.username === username);
+    // Check if another user with same email or username already exists (case insensitive)
+    const emailExists = users.some((u: any) => u.email.toLowerCase() === email.toLowerCase());
+    const usernameExists = users.some((u: any) => u.username.toLowerCase() === username.toLowerCase());
     
     if (emailExists || usernameExists) {
       return false;
