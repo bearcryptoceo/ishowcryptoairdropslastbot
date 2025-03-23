@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Coin, Globe, Plus, Trash, Trophy, Users, Database, ExternalLink, Zap, Flag } from "lucide-react";
+import { Coins } from "lucide-react";
 
 interface Project {
   id: number;
@@ -27,7 +26,7 @@ interface Project {
 }
 
 const defaultCategories = [
-  { id: "defi", name: "DeFi", icon: <Coin className="h-4 w-4" /> },
+  { id: "defi", name: "DeFi", icon: <Coins className="h-4 w-4" /> },
   { id: "nft", name: "NFTs", icon: <Database className="h-4 w-4" /> },
   { id: "dao", name: "DAOs", icon: <Users className="h-4 w-4" /> },
   { id: "layer2", name: "Layer 2", icon: <Zap className="h-4 w-4" /> },

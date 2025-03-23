@@ -48,7 +48,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Airdrop } from "@/data/airdrops";
-import AirdropItem from "@/components/airdrops/AirdropItem";
+import { AirdropItem } from "@/components/airdrops/AirdropItem";
 
 const Airdrops = () => {
   const { airdrops, toggleCompleted, categories, addCategory, updateAirdrop, deleteAirdrop, addAirdrop, clearAllAirdrops } = useAirdrops();
@@ -73,10 +73,8 @@ const Airdrops = () => {
     launchDate: "",
   });
 
-  // Check if user is admin
   const isAdmin = user?.isAdmin;
 
-  // Filter airdrops based on search, category, and difficulty
   const filteredAirdrops = airdrops.filter((airdrop) => {
     const matchesSearch = airdrop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          airdrop.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -86,15 +84,12 @@ const Airdrops = () => {
     return matchesSearch && matchesCategory && matchesDifficulty;
   });
 
-  // Extract unique categories for filter
   const uniqueCategories = ["all", ...Array.from(new Set(airdrops.map(airdrop => airdrop.category)))];
   const difficulties = ["all", "Easy", "Medium", "Hard"];
 
-  // Stats for the dashboard
   const completedCount = airdrops.filter(airdrop => airdrop.isCompleted).length;
   const progressPercentage = airdrops.length > 0 ? (completedCount / airdrops.length) * 100 : 0;
   
-  // Handle add new airdrop
   const handleAddAirdrop = () => {
     setCurrentAirdrop(null);
     setFormValues({
@@ -111,7 +106,6 @@ const Airdrops = () => {
     setIsDialogOpen(true);
   };
 
-  // Handle submit airdrop form
   const handleSubmitAirdrop = () => {
     if (!formValues.name || !formValues.category) {
       toast({
@@ -123,7 +117,6 @@ const Airdrops = () => {
     }
 
     if (currentAirdrop) {
-      // Update existing airdrop
       updateAirdrop({
         ...currentAirdrop,
         name: formValues.name,
@@ -141,7 +134,6 @@ const Airdrops = () => {
         description: `${formValues.name} has been updated successfully`,
       });
     } else {
-      // Add new airdrop
       addAirdrop({
         id: `airdrop-${Date.now()}`,
         name: formValues.name,
@@ -165,7 +157,6 @@ const Airdrops = () => {
     setIsDialogOpen(false);
   };
 
-  // Handle add new category
   const handleAddCategory = () => {
     if (newCategory.trim()) {
       addCategory(newCategory.trim());
@@ -178,25 +169,21 @@ const Airdrops = () => {
     }
   };
 
-  // Handle task input change
   const handleTaskChange = (index: number, value: string) => {
     const updatedTasks = [...formValues.tasks];
     updatedTasks[index] = value;
     setFormValues({ ...formValues, tasks: updatedTasks });
   };
 
-  // Add new task input
   const addTaskInput = () => {
     setFormValues({ ...formValues, tasks: [...formValues.tasks, ""] });
   };
 
-  // Remove task input
   const removeTaskInput = (index: number) => {
     const updatedTasks = formValues.tasks.filter((_, i) => i !== index);
     setFormValues({ ...formValues, tasks: updatedTasks });
   };
 
-  // Handle clear all airdrops (admin only)
   const handleClearAllAirdrops = () => {
     if (confirm("Are you sure you want to delete all airdrops? This action cannot be undone.")) {
       clearAllAirdrops();
@@ -207,7 +194,6 @@ const Airdrops = () => {
     }
   };
 
-  // Animation variants
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -251,7 +237,6 @@ const Airdrops = () => {
         </div>
       </div>
 
-      {/* Dashboard Stats */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
@@ -287,7 +272,6 @@ const Airdrops = () => {
         </Card>
       </div>
 
-      {/* Filters and Search */}
       <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
         <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
           <DropdownMenu>
@@ -340,7 +324,6 @@ const Airdrops = () => {
         </div>
       </div>
 
-      {/* Airdrops List */}
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="all">All Airdrops</TabsTrigger>
@@ -382,7 +365,6 @@ const Airdrops = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Add/Edit Airdrop Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
@@ -529,7 +511,6 @@ const Airdrops = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Add Category Dialog */}
       <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>

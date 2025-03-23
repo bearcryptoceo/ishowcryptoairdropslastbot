@@ -325,3 +325,6 @@ export function AirdropItem({ airdrop }: AirdropItemProps) {
     </>
   );
 }
+
+// Also export as default for backward compatibility
+export default AirdropItem;
