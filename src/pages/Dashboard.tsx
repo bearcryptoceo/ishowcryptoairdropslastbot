@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useAirdrops, Event } from "@/contexts/AirdropsContext";
+import { useTestnets } from "@/contexts/TestnetsContext";
+import { useTools } from "@/contexts/ToolsContext";
 import {
   Card,
   CardContent,
@@ -22,7 +24,11 @@ import {
   Calendar,
   Edit,
   Trash2,
-  Plus
+  Plus,
+  Package,
+  PackageCheck,
+  BookText,
+  FileText
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -48,54 +54,84 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export const Dashboard = () => {
   const { user } = useAuth();
-  const { events, addEvent, updateEvent, deleteEvent } = useAirdrops();
+  const { airdrops, events, addEvent, updateEvent, deleteEvent } = useAirdrops();
+  const { testnets } = useTestnets();
+  const { tools } = useTools();
   const { toast } = useToast();
   const [progress, setProgress] = useState(0);
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
   
   useEffect(() => {
-    // Simulate progress animation on load
-    const timer = setTimeout(() => setProgress(72), 500);
-    return () => clearTimeout(timer);
-  }, []);
+    // Calculate actual progress based on completed airdrops, testnets, and tools
+    const totalItems = airdrops.length + testnets.length + tools.length;
+    const completedItems = 
+      airdrops.filter(a => a.isCompleted).length + 
+      testnets.filter(t => t.isCompleted).length + 
+      tools.filter(t => t.isCompleted).length;
+    
+    const calculatedProgress = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+    setProgress(calculatedProgress);
+  }, [airdrops, testnets, tools]);
+
+  // Calculate today's completed items
+  const getTodayCompletedCount = () => {
+    const today = new Date().toISOString().split('T')[0];
+    // For demonstration purposes, we'll just return a static number
+    // In a real application, you would track completion timestamps
+    return 3;
+  };
 
   // Mock data for dashboard
   const stats = [
     {
       title: "Total Airdrops",
-      value: "32",
-      description: "Across all categories",
+      value: airdrops.length.toString(),
+      description: `${airdrops.filter(a => a.isCompleted).length} completed`,
       icon: Gift,
       color: "text-blue-500",
       bgColor: "bg-blue-500/10",
     },
     {
-      title: "Completed Airdrops",
-      value: "18",
-      description: "56% completion rate",
-      icon: CheckCircle,
-      color: "text-green-500",
-      bgColor: "bg-green-500/10",
-    },
-    {
       title: "Active Testnets",
-      value: "7",
-      description: "Currently participating",
+      value: testnets.length.toString(),
+      description: `${testnets.filter(t => t.isCompleted).length} completed`,
       icon: Rocket,
       color: "text-purple-500",
       bgColor: "bg-purple-500/10",
     },
     {
-      title: "Daily Tasks",
-      value: "12",
-      description: "3 completed today",
-      icon: Calendar,
+      title: "Tools Available",
+      value: tools.length.toString(),
+      description: `${tools.filter(t => t.isCompleted).length} completed`,
+      icon: Package,
       color: "text-amber-500",
       bgColor: "bg-amber-500/10",
+    },
+    {
+      title: "Daily Progress",
+      value: getTodayCompletedCount().toString(),
+      description: "Tasks completed today",
+      icon: Calendar,
+      color: "text-green-500",
+      bgColor: "bg-green-500/10",
     },
   ];
 
@@ -201,6 +237,16 @@ export const Dashboard = () => {
     show: { opacity: 1, y: 0, transition: { duration: 0.3 } },
   };
 
+  // Calculate progress percentages
+  const airdropProgress = airdrops.length > 0 ? 
+    Math.round((airdrops.filter(a => a.isCompleted).length / airdrops.length) * 100) : 0;
+  
+  const testnetProgress = testnets.length > 0 ? 
+    Math.round((testnets.filter(t => t.isCompleted).length / testnets.length) * 100) : 0;
+  
+  const toolsProgress = tools.length > 0 ? 
+    Math.round((tools.filter(t => t.isCompleted).length / tools.length) * 100) : 0;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
@@ -258,58 +304,144 @@ export const Dashboard = () => {
         >
           <Card className="glass-card glass-card-hover h-full">
             <CardHeader>
-              <CardTitle>Achievement Progress</CardTitle>
-              <CardDescription>Your journey in the crypto world</CardDescription>
+              <CardTitle>Progress Overview</CardTitle>
+              <CardDescription>Your journey across all platforms</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>Level 3 - Crypto Hunter</span>
-                  <span className="text-muted-foreground">72%</span>
+                  <span>Overall Completion</span>
+                  <span className="text-muted-foreground">{progress}%</span>
                 </div>
                 <Progress value={progress} className="h-2" />
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full flex items-center justify-center bg-green-500/10">
-                      <CheckCircle className="h-5 w-5 text-green-500" />
+              <Tabs defaultValue="progress" className="w-full">
+                <TabsList className="grid grid-cols-2 mb-4">
+                  <TabsTrigger value="progress">Progress Breakdown</TabsTrigger>
+                  <TabsTrigger value="achievements">Achievements</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="progress" className="space-y-4">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="flex items-center gap-2">
+                          <Gift className="h-4 w-4 text-blue-500" /> Airdrops
+                        </span>
+                        <span className="text-muted-foreground">{airdropProgress}%</span>
+                      </div>
+                      <Progress value={airdropProgress} className="h-1.5 bg-blue-100" indicatorClassName="bg-blue-500" />
                     </div>
-                    <div>
-                      <p className="font-medium">Airdrop Enthusiast</p>
-                      <p className="text-sm text-muted-foreground">Completed 15+ airdrops</p>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="flex items-center gap-2">
+                          <Rocket className="h-4 w-4 text-purple-500" /> Testnets
+                        </span>
+                        <span className="text-muted-foreground">{testnetProgress}%</span>
+                      </div>
+                      <Progress value={testnetProgress} className="h-1.5 bg-purple-100" indicatorClassName="bg-purple-500" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="flex items-center gap-2">
+                          <Package className="h-4 w-4 text-amber-500" /> Tools
+                        </span>
+                        <span className="text-muted-foreground">{toolsProgress}%</span>
+                      </div>
+                      <Progress value={toolsProgress} className="h-1.5 bg-amber-100" indicatorClassName="bg-amber-500" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-green-500" /> Non-Fiction
+                        </span>
+                        <span className="text-muted-foreground">40%</span>
+                      </div>
+                      <Progress value={40} className="h-1.5 bg-green-100" indicatorClassName="bg-green-500" />
                     </div>
                   </div>
-                  <span className="text-green-500 text-sm font-medium">Unlocked</span>
-                </div>
+                  
+                  <Card className="bg-secondary/30">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Today's Activity</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-sm space-y-1">
+                        <div className="flex justify-between">
+                          <span>Airdrops Completed</span>
+                          <span>2</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Testnets Joined</span>
+                          <span>1</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Tools Explored</span>
+                          <span>0</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="achievements" className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full flex items-center justify-center bg-green-500/10">
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Airdrop Enthusiast</p>
+                        <p className="text-sm text-muted-foreground">Completed 15+ airdrops</p>
+                      </div>
+                    </div>
+                    <span className="text-green-500 text-sm font-medium">Unlocked</span>
+                  </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full flex items-center justify-center bg-purple-500/10">
-                      <Rocket className="h-5 w-5 text-purple-500" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full flex items-center justify-center bg-purple-500/10">
+                        <Rocket className="h-5 w-5 text-purple-500" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Testnet Pioneer</p>
+                        <p className="text-sm text-muted-foreground">Participated in 5+ testnets</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">Testnet Pioneer</p>
-                      <p className="text-sm text-muted-foreground">Participated in 5+ testnets</p>
-                    </div>
+                    <span className="text-green-500 text-sm font-medium">Unlocked</span>
                   </div>
-                  <span className="text-green-500 text-sm font-medium">Unlocked</span>
-                </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full flex items-center justify-center bg-amber-500/10">
-                      <Clock className="h-5 w-5 text-amber-500" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full flex items-center justify-center bg-amber-500/10">
+                        <Package className="h-5 w-5 text-amber-500" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Tools Explorer</p>
+                        <p className="text-sm text-muted-foreground">Used 10+ crypto tools</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">Consistent Tracker</p>
-                      <p className="text-sm text-muted-foreground">Logged in for 30 consecutive days</p>
-                    </div>
+                    <span className="text-muted-foreground text-sm font-medium">5/10 tools</span>
                   </div>
-                  <span className="text-muted-foreground text-sm font-medium">18/30 days</span>
-                </div>
-              </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full flex items-center justify-center bg-blue-500/10">
+                        <BookText className="h-5 w-5 text-blue-500" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Knowledge Seeker</p>
+                        <p className="text-sm text-muted-foreground">Read 20+ non-fiction pieces</p>
+                      </div>
+                    </div>
+                    <span className="text-muted-foreground text-sm font-medium">8/20 read</span>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </motion.div>
