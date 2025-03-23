@@ -28,7 +28,9 @@ import {
   Package,
   PackageCheck,
   BookText,
-  FileText
+  FileText,
+  Link as LinkIcon,
+  Star
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -69,6 +71,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+export interface EventForm extends Event {
+  eventLink?: string;
+}
+
 export const Dashboard = () => {
   const { user } = useAuth();
   const { airdrops, events, addEvent, updateEvent, deleteEvent } = useAirdrops();
@@ -78,6 +84,8 @@ export const Dashboard = () => {
   const [progress, setProgress] = useState(0);
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
+  const [level, setLevel] = useState(1);
+  const [levelProgress, setLevelProgress] = useState(0);
   
   useEffect(() => {
     // Calculate actual progress based on completed airdrops, testnets, and tools
@@ -89,6 +97,15 @@ export const Dashboard = () => {
     
     const calculatedProgress = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
     setProgress(calculatedProgress);
+    
+    // Calculate level based on completed items
+    const newLevel = Math.max(1, Math.floor(completedItems / 5) + 1);
+    setLevel(newLevel);
+    
+    // Calculate progress toward next level
+    const itemsForNextLevel = newLevel * 5;
+    const progressToNextLevel = ((completedItems % 5) / 5) * 100;
+    setLevelProgress(progressToNextLevel);
   }, [airdrops, testnets, tools]);
 
   // Calculate today's completed items
@@ -136,7 +153,7 @@ export const Dashboard = () => {
   ];
 
   // Form for adding/editing events
-  const form = useForm<Event>({
+  const form = useForm<EventForm>({
     defaultValues: {
       id: "",
       title: "",
@@ -144,16 +161,20 @@ export const Dashboard = () => {
       status: "upcoming",
       timeLeft: "",
       buttonText: "View Details",
-      buttonAction: "view_details"
+      buttonAction: "view_details",
+      eventLink: ""
     }
   });
 
   // Function to handle add/edit event
-  const handleAddEditEvent = (data: Event) => {
+  const handleAddEditEvent = (data: EventForm) => {
     try {
+      // Extract eventLink from the form data
+      const { eventLink, ...eventData } = data;
+      
       if (currentEvent) {
         // Update existing event
-        updateEvent(data);
+        updateEvent(eventData);
         toast({
           title: "Event Updated",
           description: "The event has been successfully updated.",
@@ -161,7 +182,7 @@ export const Dashboard = () => {
       } else {
         // Add new event
         const newEvent = {
-          ...data,
+          ...eventData,
           id: `event-${Date.now()}`, // Generate unique ID
         };
         addEvent(newEvent);
@@ -216,7 +237,8 @@ export const Dashboard = () => {
       status: "upcoming",
       timeLeft: "",
       buttonText: "View Details",
-      buttonAction: "view_details"
+      buttonAction: "view_details",
+      eventLink: ""
     });
     setIsEventDialogOpen(true);
   };
@@ -331,7 +353,7 @@ export const Dashboard = () => {
                         </span>
                         <span className="text-muted-foreground">{airdropProgress}%</span>
                       </div>
-                      <Progress value={airdropProgress} className="h-1.5 bg-blue-100" indicatorClassName="bg-blue-500" />
+                      <Progress value={airdropProgress} className="h-1.5 bg-blue-100" />
                     </div>
                     
                     <div className="space-y-2">
@@ -341,7 +363,7 @@ export const Dashboard = () => {
                         </span>
                         <span className="text-muted-foreground">{testnetProgress}%</span>
                       </div>
-                      <Progress value={testnetProgress} className="h-1.5 bg-purple-100" indicatorClassName="bg-purple-500" />
+                      <Progress value={testnetProgress} className="h-1.5 bg-purple-100" />
                     </div>
                     
                     <div className="space-y-2">
@@ -351,7 +373,7 @@ export const Dashboard = () => {
                         </span>
                         <span className="text-muted-foreground">{toolsProgress}%</span>
                       </div>
-                      <Progress value={toolsProgress} className="h-1.5 bg-amber-100" indicatorClassName="bg-amber-500" />
+                      <Progress value={toolsProgress} className="h-1.5 bg-amber-100" />
                     </div>
                     
                     <div className="space-y-2">
@@ -361,9 +383,43 @@ export const Dashboard = () => {
                         </span>
                         <span className="text-muted-foreground">40%</span>
                       </div>
-                      <Progress value={40} className="h-1.5 bg-green-100" indicatorClassName="bg-green-500" />
+                      <Progress value={40} className="h-1.5 bg-green-100" />
                     </div>
                   </div>
+                  
+                  {/* User Level Card with Progress */}
+                  <Card className="bg-secondary/30 mb-4">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center justify-between">
+                        <span>Your Current Level</span>
+                        <div className="flex items-center">
+                          <span className="mr-2">Level {level}</span>
+                          <div className="h-6 w-6 bg-primary rounded-full flex items-center justify-center text-xs text-primary-foreground font-bold">
+                            {level}
+                          </div>
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span>Progress to Level {level + 1}</span>
+                          <span>{Math.round(levelProgress)}%</span>
+                        </div>
+                        <Progress value={levelProgress} className="h-1.5" />
+                        <div className="flex justify-between items-center text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Star className="h-3 w-3 fill-primary text-primary" />
+                            Level {level}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Star className="h-3 w-3 fill-primary text-primary" />
+                            Level {level + 1}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                   
                   <Card className="bg-secondary/30">
                     <CardHeader className="pb-2">
@@ -655,6 +711,29 @@ export const Dashboard = () => {
                         <SelectItem value="get_notified">Get Notified</SelectItem>
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="eventLink"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Event Link (Optional)</FormLabel>
+                    <FormControl>
+                      <div className="flex">
+                        <Input 
+                          placeholder="https://example.com" 
+                          {...field} 
+                          className="flex-grow"
+                        />
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      Add an external link for this event
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
