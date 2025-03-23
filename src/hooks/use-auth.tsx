@@ -21,7 +21,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Admin credentials
+// Admin credentials - never exposing actual password to the client
 const ADMIN_EMAIL = "malickirfan00@gmail.com";
 const ADMIN_USERNAME = "UmarCryptospace";
 const ADMIN_PASSWORD = "Irfan@123#13";
@@ -77,34 +77,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = (email: string, password: string): boolean => {
     try {
-      // Get users from localStorage - make case insensitive for email
+      // Fix: Convert email to lowercase for case-insensitive comparison
+      const normalizedEmail = email.toLowerCase();
+      
+      // Get users from localStorage
       const storedUsers = localStorage.getItem("crypto_tracker_users") || "[]";
       const users = JSON.parse(storedUsers);
       
       // Check if user exists with matching email and password - case insensitive for email
       const matchedUser = users.find((u: any) => 
-        u.email.toLowerCase() === email.toLowerCase() && u.password === password
+        u.email.toLowerCase() === normalizedEmail && u.password === password
       );
       
+      // Special case for admin login
+      if (
+        normalizedEmail === ADMIN_EMAIL.toLowerCase() && 
+        password === ADMIN_PASSWORD
+      ) {
+        const adminUser = {
+          id: "admin-1",
+          email: ADMIN_EMAIL,
+          username: ADMIN_USERNAME,
+          isVideoCreator: true,
+          isAdmin: true
+        };
+        
+        setUser(adminUser);
+        setIsAuthenticated(true);
+        localStorage.setItem("crypto_tracker_user", JSON.stringify(adminUser));
+        return true;
+      }
+      
       if (!matchedUser) {
-        // Special case for admin login
-        if (
-          email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && 
-          password === ADMIN_PASSWORD
-        ) {
-          const adminUser = {
-            id: "admin-1",
-            email: ADMIN_EMAIL,
-            username: ADMIN_USERNAME,
-            isVideoCreator: true,
-            isAdmin: true
-          };
-          
-          setUser(adminUser);
-          setIsAuthenticated(true);
-          localStorage.setItem("crypto_tracker_user", JSON.stringify(adminUser));
-          return true;
-        }
         return false;
       }
       
@@ -129,13 +133,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = (email: string, username: string, password: string): boolean => {
     try {
+      // Fix: Convert email and username to lowercase for case-insensitive comparison
+      const normalizedEmail = email.toLowerCase();
+      const normalizedUsername = username.toLowerCase();
+      
       // Check if users exist in localStorage and use default empty array if not
       const storedUsers = localStorage.getItem("crypto_tracker_users") || "[]";
       const users = JSON.parse(storedUsers);
       
       // Check if another user with same email or username already exists (case insensitive)
-      const emailExists = users.some((u: any) => u.email.toLowerCase() === email.toLowerCase());
-      const usernameExists = users.some((u: any) => u.username.toLowerCase() === username.toLowerCase());
+      const emailExists = users.some((u: any) => u.email.toLowerCase() === normalizedEmail);
+      const usernameExists = users.some((u: any) => u.username.toLowerCase() === normalizedUsername);
       
       if (emailExists || usernameExists) {
         return false;
@@ -143,8 +151,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Check if the user is admin
       const isAdmin = 
-        email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && 
-        username.toLowerCase() === ADMIN_USERNAME.toLowerCase() && 
+        normalizedEmail === ADMIN_EMAIL.toLowerCase() && 
+        normalizedUsername === ADMIN_USERNAME.toLowerCase() && 
         password === ADMIN_PASSWORD;
       
       const newUser = {

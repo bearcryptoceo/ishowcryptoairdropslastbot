@@ -59,9 +59,13 @@ export function LoginForm() {
       } else {
         toast({
           title: "Error",
-          description: "Invalid credentials or user not found",
+          description: "User not found. Please register first or check your credentials.",
           variant: "destructive",
         });
+        
+        // Generate a new captcha after failed login attempt
+        setCaptcha(generateCaptcha());
+        setCaptchaAnswer("");
       }
     } catch (error) {
       toast({

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Coins } from "lucide-react";
+import { Coins, Database2, Users2, Zap, Trash2, Plus, Globe, FileText } from "lucide-react";
 
 interface Project {
   id: number;
@@ -27,8 +27,8 @@ interface Project {
 
 const defaultCategories = [
   { id: "defi", name: "DeFi", icon: <Coins className="h-4 w-4" /> },
-  { id: "nft", name: "NFTs", icon: <Database className="h-4 w-4" /> },
-  { id: "dao", name: "DAOs", icon: <Users className="h-4 w-4" /> },
+  { id: "nft", name: "NFTs", icon: <Database2 className="h-4 w-4" /> },
+  { id: "dao", name: "DAOs", icon: <Users2 className="h-4 w-4" /> },
   { id: "layer2", name: "Layer 2", icon: <Zap className="h-4 w-4" /> },
 ];
 
@@ -48,7 +48,6 @@ const Explore = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
   
-  // Form state
   const [formName, setFormName] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [formCategory, setFormCategory] = useState("defi");
@@ -59,7 +58,6 @@ const Explore = () => {
   const [formChains, setFormChains] = useState("");
   const [formStatus, setFormStatus] = useState("active");
 
-  // Load projects from localStorage
   useEffect(() => {
     const savedProjects = localStorage.getItem("explore_projects");
     if (savedProjects) {
@@ -67,7 +65,6 @@ const Explore = () => {
     }
   }, []);
 
-  // Save projects to localStorage when they change
   useEffect(() => {
     localStorage.setItem("explore_projects", JSON.stringify(projects));
   }, [projects]);
@@ -142,7 +139,6 @@ const Explore = () => {
     setFormStatus("active");
   };
 
-  // Filter projects by active category
   const filteredProjects = projects.filter(project => project.category === activeTab);
 
   const statusBadgeColors: Record<string, string> = {
@@ -164,7 +160,7 @@ const Explore = () => {
         <div className="flex gap-2">
           {user?.isAdmin && (
             <Button variant="destructive" onClick={() => setIsDeleteAllDialogOpen(true)}>
-              <Trash className="mr-2 h-4 w-4" />
+              <Trash2 className="mr-2 h-4 w-4" />
               Clear All
             </Button>
           )}
@@ -374,7 +370,7 @@ const Explore = () => {
                             className="h-8 w-8 text-red-500 hover:bg-red-100 hover:text-red-700"
                             onClick={() => handleDeleteProject(project.id)}
                           >
-                            <Trash className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
@@ -431,7 +427,6 @@ const Explore = () => {
         ))}
       </Tabs>
       
-      {/* Delete All Confirmation Dialog */}
       <Dialog open={isDeleteAllDialogOpen} onOpenChange={setIsDeleteAllDialogOpen}>
         <DialogContent>
           <DialogHeader>
