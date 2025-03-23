@@ -1,322 +1,344 @@
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { 
-  BookOpen, 
-  Search, 
-  Bookmark, 
-  Clock, 
-  ArrowRight,
-  BookMarked,
-  Tag,
-  Video
-} from "lucide-react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { BookOpen, FileText, Plus, Rocket, Trash, Bookmark, PenSquare } from "lucide-react";
 
-// Learning resources data
-const learningResources = [
-  {
-    id: "learn-1",
-    title: "Introduction to Blockchain Technology",
-    description: "Learn the fundamentals of blockchain technology, including how it works and why it matters.",
-    category: "Blockchain",
-    readTime: "10 mins",
-    authorName: "Crypto Academy",
-    date: "2023-09-15",
-    imageUrl: "https://images.unsplash.com/photo-1639322537231-2f206e06af84?q=80&w=1000",
-    link: "https://example.com/blockchain-intro",
-    isBookmarked: false,
-  },
-  {
-    id: "learn-2",
-    title: "Understanding Crypto Wallets",
-    description: "A comprehensive guide to different types of cryptocurrency wallets and how to keep your assets secure.",
-    category: "Security",
-    readTime: "15 mins",
-    authorName: "Wallet Expert",
-    date: "2023-10-05",
-    imageUrl: "https://images.unsplash.com/photo-1624996379697-f01d168b1a52?q=80&w=1000",
-    link: "https://example.com/crypto-wallets",
-    isBookmarked: false,
-  },
-  {
-    id: "learn-3",
-    title: "DeFi Explained: Decentralized Finance",
-    description: "Explore the world of DeFi and learn how it's changing traditional financial systems.",
-    category: "DeFi",
-    readTime: "20 mins",
-    authorName: "DeFi Explorer",
-    date: "2023-11-12",
-    imageUrl: "https://images.unsplash.com/photo-1622630998477-20aa696ecb05?q=80&w=1000",
-    link: "https://example.com/defi-explained",
-    isBookmarked: true,
-  },
-  {
-    id: "learn-4",
-    title: "NFTs: The Complete Guide",
-    description: "Everything you need to know about Non-Fungible Tokens and the digital art revolution.",
-    category: "NFTs",
-    readTime: "18 mins",
-    authorName: "NFT Enthusiast",
-    date: "2023-12-03",
-    imageUrl: "https://images.unsplash.com/photo-1622547748225-3fc4abd2cca0?q=80&w=1000",
-    link: "https://example.com/nft-guide",
-    isBookmarked: false,
-  },
-  {
-    id: "learn-5",
-    title: "Layer 2 Solutions Explained",
-    description: "Deep dive into Layer 2 scaling solutions and how they're addressing blockchain scalability issues.",
-    category: "Scaling",
-    readTime: "25 mins",
-    authorName: "Crypto Researcher",
-    date: "2024-01-20",
-    imageUrl: "https://images.unsplash.com/photo-1620321023374-d1a68fbc720d?q=80&w=1000",
-    link: "https://example.com/layer2-solutions",
-    isBookmarked: true,
-  },
+interface LearnResource {
+  id: number;
+  title: string;
+  description: string;
+  content: string;
+  category: string;
+  author: string;
+  createdAt: string;
+  imageUrl?: string;
+  link?: string;
+}
+
+const defaultCategories = [
+  { id: "basics", name: "Blockchain Basics", icon: <BookOpen className="h-4 w-4" /> },
+  { id: "defi", name: "DeFi", icon: <Rocket className="h-4 w-4" /> },
+  { id: "guides", name: "Guides & Tutorials", icon: <FileText className="h-4 w-4" /> },
+  { id: "investment", name: "Investment Strategies", icon: <Bookmark className="h-4 w-4" /> },
+];
+
+const placeholderImages = [
+  "https://images.unsplash.com/photo-1639762681057-408e52192e55?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1639322537228-f710d846310a?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1639322537174-8c5f156fd822?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&w=800&q=80",
 ];
 
 const Learn = () => {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const [resources, setResources] = useState(learningResources);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [activeTab, setActiveTab] = useState("basics");
+  const [resources, setResources] = useState<LearnResource[]>([]);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
+  
+  // Form state
+  const [formTitle, setFormTitle] = useState("");
+  const [formDescription, setFormDescription] = useState("");
+  const [formContent, setFormContent] = useState("");
+  const [formCategory, setFormCategory] = useState("basics");
+  const [formLink, setFormLink] = useState("");
 
-  // Get unique categories
-  const categories = ["All", ...Array.from(new Set(resources.map(r => r.category)))];
+  // Load resources from localStorage
+  useEffect(() => {
+    const savedResources = localStorage.getItem("learn_resources");
+    if (savedResources) {
+      setResources(JSON.parse(savedResources));
+    }
+  }, []);
 
-  // Toggle bookmark for a resource
-  const toggleBookmark = (id: string) => {
-    setResources(resources.map(resource => 
-      resource.id === id 
-        ? { ...resource, isBookmarked: !resource.isBookmarked } 
-        : resource
-    ));
-    
-    const resource = resources.find(r => r.id === id);
+  // Save resources to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem("learn_resources", JSON.stringify(resources));
+  }, [resources]);
+
+  const getRandomImage = () => {
+    return placeholderImages[Math.floor(Math.random() * placeholderImages.length)];
+  };
+
+  const handleAddResource = () => {
+    if (!formTitle || !formDescription || !formContent) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const newResource = {
+      id: Date.now(),
+      title: formTitle,
+      description: formDescription,
+      content: formContent,
+      category: formCategory,
+      author: user?.username || "Anonymous",
+      createdAt: new Date().toISOString().split('T')[0],
+      imageUrl: getRandomImage(),
+      link: formLink || undefined
+    };
+
+    setResources([...resources, newResource]);
+    setIsAddDialogOpen(false);
+    resetForm();
+
     toast({
-      title: resource?.isBookmarked ? "Removed from bookmarks" : "Added to bookmarks",
-      description: `"${resource?.title}" has been ${resource?.isBookmarked ? "removed from" : "added to"} your bookmarks.`,
-      duration: 3000,
+      title: "Resource Added",
+      description: "Your learning resource has been added successfully",
     });
   };
 
-  // Filter resources based on search and category
-  const filteredResources = resources.filter(resource => {
-    const matchesSearch = resource.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          resource.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "All" || resource.category === selectedCategory;
+  const handleDeleteResource = (id: number) => {
+    setResources(resources.filter(resource => resource.id !== id));
     
-    return matchesSearch && matchesCategory;
-  });
-
-  // Animation variants
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
+    toast({
+      title: "Resource Deleted",
+      description: "The learning resource has been removed",
+    });
   };
 
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
+  const handleClearAllResources = () => {
+    setResources([]);
+    setIsDeleteAllDialogOpen(false);
+    
+    toast({
+      title: "All Resources Cleared",
+      description: "All learning resources have been removed",
+    });
   };
+
+  const resetForm = () => {
+    setFormTitle("");
+    setFormDescription("");
+    setFormContent("");
+    setFormCategory("basics");
+    setFormLink("");
+  };
+
+  // Filter resources by active category
+  const filteredResources = resources.filter(resource => resource.category === activeTab);
 
   return (
     <div className="container max-w-7xl mx-auto py-6 space-y-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center">
-            <BookOpen className="mr-3 h-8 w-8 text-primary" />
-            Learn Crypto
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight">Learn</h1>
           <p className="text-muted-foreground mt-1">
-            Discover helpful resources to enhance your crypto knowledge
+            Educational resources to help you master crypto and blockchain
           </p>
         </div>
-      </div>
-
-      {/* Search and filters */}
-      <div className="flex flex-col md:flex-row gap-4 md:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search resources..."
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
         
-        <div className="flex flex-wrap gap-2">
-          {categories.map(category => (
-            <Button
-              key={category}
-              variant={selectedCategory === category ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedCategory(category)}
-            >
-              {category}
+        <div className="flex gap-2">
+          {user?.isAdmin && (
+            <Button variant="destructive" onClick={() => setIsDeleteAllDialogOpen(true)}>
+              <Trash className="mr-2 h-4 w-4" />
+              Clear All
             </Button>
-          ))}
+          )}
+          
+          {user?.isAdmin && (
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Resource
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Add Learning Resource</DialogTitle>
+                  <DialogDescription>
+                    Create a new educational resource for the platform
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <label htmlFor="title" className="text-sm font-medium">Title</label>
+                    <Input
+                      id="title"
+                      placeholder="Enter title"
+                      value={formTitle}
+                      onChange={(e) => setFormTitle(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="description" className="text-sm font-medium">Short Description</label>
+                    <Textarea
+                      id="description"
+                      placeholder="Enter a brief description"
+                      rows={2}
+                      value={formDescription}
+                      onChange={(e) => setFormDescription(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="content" className="text-sm font-medium">Main Content</label>
+                    <Textarea
+                      id="content"
+                      placeholder="Enter the main content"
+                      rows={6}
+                      value={formContent}
+                      onChange={(e) => setFormContent(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="category" className="text-sm font-medium">Category</label>
+                    <select
+                      id="category"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={formCategory}
+                      onChange={(e) => setFormCategory(e.target.value)}
+                    >
+                      {defaultCategories.map(category => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="link" className="text-sm font-medium">External Link (Optional)</label>
+                    <Input
+                      id="link"
+                      placeholder="https://..."
+                      value={formLink}
+                      onChange={(e) => setFormLink(e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAddResource}>
+                    Add Resource
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
-
-      {/* Resources Tabs */}
-      <Tabs defaultValue="all">
-        <TabsList className="mb-6">
-          <TabsTrigger value="all">All Resources</TabsTrigger>
-          <TabsTrigger value="bookmarked">Bookmarked</TabsTrigger>
-          <TabsTrigger value="articles">Articles</TabsTrigger>
-          <TabsTrigger value="videos">Video Tutorials</TabsTrigger>
+      
+      <Tabs defaultValue="basics" value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full">
+          {defaultCategories.map(category => (
+            <TabsTrigger key={category.id} value={category.id} className="flex items-center">
+              {category.icon}
+              <span className="ml-2">{category.name}</span>
+            </TabsTrigger>
+          ))}
         </TabsList>
         
-        <TabsContent value="all">
-          <motion.div 
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
-            variants={container}
-            initial="hidden"
-            animate="show"
-          >
-            {filteredResources.length > 0 ? (
-              filteredResources.map(resource => (
-                <ResourceCard 
-                  key={resource.id} 
-                  resource={resource} 
-                  toggleBookmark={toggleBookmark} 
-                  variants={item}
-                />
-              ))
+        {defaultCategories.map(category => (
+          <TabsContent key={category.id} value={category.id} className="space-y-6">
+            {filteredResources.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center h-40 p-6">
+                  <p className="text-muted-foreground">No resources available in this category yet.</p>
+                  {user?.isAdmin && (
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => {
+                        setFormCategory(category.id);
+                        setIsAddDialogOpen(true);
+                      }}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add {category.name} Resource
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
             ) : (
-              <div className="col-span-full text-center py-12">
-                <BookOpen className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">No resources found</h3>
-                <p className="text-muted-foreground">
-                  Try adjusting your search or filter criteria
-                </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredResources.map(resource => (
+                  <Card key={resource.id} className="overflow-hidden flex flex-col h-full">
+                    <div className="aspect-video bg-muted overflow-hidden relative">
+                      {resource.imageUrl && (
+                        <img 
+                          src={resource.imageUrl} 
+                          alt={resource.title} 
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                      {user?.isAdmin && (
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-8 w-8 rounded-full opacity-80 hover:opacity-100"
+                          onClick={() => handleDeleteResource(resource.id)}
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <CardHeader>
+                      <CardTitle>{resource.title}</CardTitle>
+                      <CardDescription className="flex justify-between items-center">
+                        <span>By {resource.author}</span>
+                        <span className="text-xs">{resource.createdAt}</span>
+                      </CardDescription>
+                    </CardHeader>
+                    
+                    <CardContent>
+                      <p className="text-sm line-clamp-3">{resource.description}</p>
+                    </CardContent>
+                    
+                    <CardFooter className="mt-auto">
+                      <Button variant="outline" className="w-full">
+                        <FileText className="mr-2 h-4 w-4" />
+                        Read More
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
               </div>
             )}
-          </motion.div>
-        </TabsContent>
-        
-        <TabsContent value="bookmarked">
-          <motion.div 
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
-            variants={container}
-            initial="hidden"
-            animate="show"
-          >
-            {filteredResources.filter(r => r.isBookmarked).length > 0 ? (
-              filteredResources
-                .filter(r => r.isBookmarked)
-                .map(resource => (
-                  <ResourceCard 
-                    key={resource.id} 
-                    resource={resource} 
-                    toggleBookmark={toggleBookmark} 
-                    variants={item}
-                  />
-                ))
-            ) : (
-              <div className="col-span-full text-center py-12">
-                <BookMarked className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">No bookmarked resources</h3>
-                <p className="text-muted-foreground">
-                  Bookmark resources to save them for later
-                </p>
-              </div>
-            )}
-          </motion.div>
-        </TabsContent>
-        
-        <TabsContent value="articles">
-          <div className="text-center py-12">
-            <h3 className="text-lg font-medium">Articles coming soon</h3>
-            <p className="text-muted-foreground">
-              We're working on adding more article content
-            </p>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="videos">
-          <div className="text-center py-12">
-            <Video className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">Video tutorials coming soon</h3>
-            <p className="text-muted-foreground">
-              Check back later for video content
-            </p>
-          </div>
-        </TabsContent>
+          </TabsContent>
+        ))}
       </Tabs>
+      
+      {/* Delete All Confirmation Dialog */}
+      <Dialog open={isDeleteAllDialogOpen} onOpenChange={setIsDeleteAllDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Clear All Resources</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove all learning resources? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteAllDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleClearAllResources}>
+              Clear All
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
-  );
-};
-
-// Resource card component
-const ResourceCard = ({ resource, toggleBookmark, variants }: any) => {
-  return (
-    <motion.div variants={variants}>
-      <Card className="h-full overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-        <div className="relative h-48 overflow-hidden">
-          <img 
-            src={resource.imageUrl} 
-            alt={resource.title} 
-            className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
-            onError={(e) => {
-              e.currentTarget.src = "https://images.unsplash.com/photo-1621761191319-c6fb62004040?q=80&w=1000";
-            }}
-          />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm hover:bg-background"
-            onClick={() => toggleBookmark(resource.id)}
-          >
-            {resource.isBookmarked ? (
-              <BookMarked className="h-5 w-5 text-primary fill-primary" />
-            ) : (
-              <Bookmark className="h-5 w-5" />
-            )}
-          </Button>
-          <Badge className="absolute top-2 left-2 bg-primary/80 backdrop-blur-sm">
-            {resource.category}
-          </Badge>
-        </div>
-        
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xl line-clamp-2">{resource.title}</CardTitle>
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Clock className="mr-1 h-3 w-3" />
-            {resource.readTime} read
-          </div>
-        </CardHeader>
-        
-        <CardContent className="flex-1">
-          <CardDescription className="line-clamp-3">
-            {resource.description}
-          </CardDescription>
-        </CardContent>
-        
-        <CardFooter className="pt-2 flex justify-between items-center">
-          <div className="text-sm text-muted-foreground">
-            By {resource.authorName}
-          </div>
-          <Button size="sm" onClick={() => window.open(resource.link, '_blank')}>
-            Read More <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </CardFooter>
-      </Card>
-    </motion.div>
   );
 };
 

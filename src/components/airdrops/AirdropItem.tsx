@@ -1,60 +1,44 @@
+
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { Airdrop } from "@/data/airdrops";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAirdrops } from "@/contexts/AirdropsContext";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, Edit, ExternalLink, MoreVertical, Plus, Trash2 } from "lucide-react";
+import { Calendar, Check, ExternalLink, MoreHorizontal, Pencil, Pin, PinOff, Trash } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface AirdropItemProps {
   airdrop: Airdrop;
 }
 
-const AirdropItem = ({ airdrop }: AirdropItemProps) => {
+const difficultyColors: Record<string, string> = {
+  Easy: "bg-green-100 text-green-800",
+  Medium: "bg-yellow-100 text-yellow-800",
+  Hard: "bg-red-100 text-red-800"
+};
+
+export function AirdropItem({ airdrop }: AirdropItemProps) {
   const { toggleCompleted, togglePinned, updateAirdrop, deleteAirdrop, categories } = useAirdrops();
   const { toast } = useToast();
-  
+
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [formValues, setFormValues] = useState({
-    name: airdrop.name,
-    description: airdrop.description,
-    category: airdrop.category,
-    link: airdrop.link,
-    logo: airdrop.logo,
-    estimatedValue: airdrop.estimatedValue,
-    difficulty: airdrop.difficulty,
-    tasks: [...airdrop.tasks],
-    launchDate: airdrop.launchDate,
-  });
+  const [editedAirdrop, setEditedAirdrop] = useState<Airdrop>({ ...airdrop });
 
-  const handleEditSubmit = () => {
-    const updatedAirdrop = {
-      ...airdrop,
-      name: formValues.name,
-      description: formValues.description,
-      category: formValues.category,
-      link: formValues.link,
-      logo: formValues.logo,
-      estimatedValue: formValues.estimatedValue,
-      difficulty: formValues.difficulty,
-      tasks: formValues.tasks.filter(task => task.trim() !== ""),
-      launchDate: formValues.launchDate,
-    };
-
-    updateAirdrop(updatedAirdrop);
+  const handleEditSave = () => {
+    updateAirdrop(editedAirdrop);
     setIsEditDialogOpen(false);
     
     toast({
-      title: "Airdrop updated",
-      description: `${formValues.name} has been updated successfully`,
+      title: "Airdrop Updated",
+      description: `${editedAirdrop.name} has been updated successfully.`
     });
   };
 
@@ -63,258 +47,269 @@ const AirdropItem = ({ airdrop }: AirdropItemProps) => {
     setIsDeleteDialogOpen(false);
     
     toast({
-      title: "Airdrop deleted",
-      description: `${airdrop.name} has been deleted successfully`,
+      title: "Airdrop Deleted",
+      description: `${airdrop.name} has been permanently removed.`
     });
   };
 
   const handleTaskChange = (index: number, value: string) => {
-    const updatedTasks = [...formValues.tasks];
+    const updatedTasks = [...editedAirdrop.tasks];
     updatedTasks[index] = value;
-    setFormValues({ ...formValues, tasks: updatedTasks });
+    setEditedAirdrop({ ...editedAirdrop, tasks: updatedTasks });
   };
 
-  const addTaskInput = () => {
-    setFormValues({ ...formValues, tasks: [...formValues.tasks, ""] });
+  const addTask = () => {
+    setEditedAirdrop({ 
+      ...editedAirdrop, 
+      tasks: [...editedAirdrop.tasks, "New task"] 
+    });
   };
 
-  const removeTaskInput = (index: number) => {
-    const updatedTasks = formValues.tasks.filter((_, i) => i !== index);
-    setFormValues({ ...formValues, tasks: updatedTasks });
+  const removeTask = (index: number) => {
+    const updatedTasks = [...editedAirdrop.tasks];
+    updatedTasks.splice(index, 1);
+    setEditedAirdrop({ ...editedAirdrop, tasks: updatedTasks });
   };
 
   return (
-    <motion.div variants={item}>
-      <Card className={`transition-all duration-300 overflow-hidden ${airdrop.isCompleted ? 'border-green-500 bg-green-50/10' : ''}`}>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
+    <>
+      <Card className={`h-full ${airdrop.isPinned ? 'border-primary/50' : ''} ${airdrop.isCompleted ? 'bg-muted/30' : ''}`}>
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-start">
             <div className="flex items-center gap-2">
-              <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
-                <img 
-                  src={airdrop.logo} 
-                  alt={airdrop.name} 
-                  className="h-full w-full object-cover"
-                  onError={(e) => (e.currentTarget.src = "https://cryptologos.cc/logos/placeholder.png")}
-                />
-              </div>
+              {airdrop.logo && (
+                <div className="h-8 w-8 rounded-full overflow-hidden bg-background flex items-center justify-center">
+                  <img 
+                    src={airdrop.logo} 
+                    alt={`${airdrop.name} logo`} 
+                    className="h-6 w-6 object-contain" 
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/placeholder.svg';
+                    }}
+                  />
+                </div>
+              )}
               <div>
-                <CardTitle className="text-xl">{airdrop.name}</CardTitle>
-                <CardDescription className="text-xs">{airdrop.category}</CardDescription>
+                <CardTitle className="text-lg">{airdrop.name}</CardTitle>
+                <CardDescription className="line-clamp-1">{airdrop.category}</CardDescription>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant={airdrop.difficulty === "Easy" ? "outline" : airdrop.difficulty === "Medium" ? "secondary" : "destructive"}>
-                {airdrop.difficulty}
-              </Badge>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => toggleCompleted(airdrop.id)}>
+                  <Check className="mr-2 h-4 w-4" />
+                  {airdrop.isCompleted ? "Mark as Incomplete" : "Mark as Complete"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => togglePinned(airdrop.id)}>
+                  {airdrop.isPinned ? (
+                    <>
+                      <PinOff className="mr-2 h-4 w-4" />
+                      Unpin Airdrop
+                    </>
+                  ) : (
+                    <>
+                      <Pin className="mr-2 h-4 w-4" />
+                      Pin Airdrop
+                    </>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit Details
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <Trash className="mr-2 h-4 w-4" />
+                  Delete Airdrop
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">{airdrop.description}</p>
+        
+        <CardContent className="pb-3">
+          <p className="text-sm line-clamp-2 mb-3">{airdrop.description}</p>
           
-          <div className="space-y-1">
-            <div className="text-sm font-medium">Est. Value:</div>
-            <div className="text-primary font-semibold">{airdrop.estimatedValue}</div>
+          <div className="flex flex-wrap gap-2 mb-3">
+            <Badge variant="outline" className={difficultyColors[airdrop.difficulty]}>
+              {airdrop.difficulty}
+            </Badge>
+            <Badge variant="outline">
+              Est. Value: {airdrop.estimatedValue}
+            </Badge>
+            <Badge variant="outline" className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              {airdrop.launchDate === "TBD" ? "TBD" : "Launched"}
+            </Badge>
           </div>
           
           <div className="space-y-1">
-            <div className="text-sm font-medium">Status:</div>
-            <div className={`font-semibold ${airdrop.isCompleted ? 'text-green-500' : 'text-amber-500'}`}>
-              {airdrop.isCompleted ? 'Completed' : 'Pending'}
-            </div>
-          </div>
-          
-          <div className="flex flex-wrap gap-2 pt-2">
-            <Button 
-              variant={airdrop.isCompleted ? "outline" : "default"}
-              className={`flex-1 ${airdrop.isCompleted ? 'border-green-500 text-green-500 hover:bg-green-50' : ''}`}
-              onClick={() => toggleCompleted(airdrop.id)}
-            >
-              {airdrop.isCompleted ? (
-                <>
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Completed
-                </>
-              ) : (
-                'Mark as Complete'
+            <h4 className="text-sm font-medium">Required Tasks:</h4>
+            <ul className="text-sm space-y-1 list-disc pl-5">
+              {airdrop.tasks.slice(0, 3).map((task, index) => (
+                <li key={index} className="line-clamp-1">{task}</li>
+              ))}
+              {airdrop.tasks.length > 3 && (
+                <li className="text-muted-foreground">+{airdrop.tasks.length - 3} more tasks</li>
               )}
-            </Button>
-            
-            <Button variant="outline" className="flex-1" onClick={() => window.open(airdrop.link, '_blank')}>
-              <ExternalLink className="mr-2 h-4 w-4" />
-              Visit Site
-            </Button>
+            </ul>
           </div>
         </CardContent>
+        
+        <CardFooter className="pt-0">
+          <Button variant="outline" size="sm" className="w-full" asChild>
+            <a href={airdrop.link} target="_blank" rel="noopener noreferrer" className="flex items-center">
+              Visit Project
+              <ExternalLink className="ml-1 h-3 w-3" />
+            </a>
+          </Button>
+        </CardFooter>
       </Card>
 
+      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[550px]">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Airdrop</DialogTitle>
             <DialogDescription>
-              Update the details for this airdrop
+              Update the details for {airdrop.name}
             </DialogDescription>
           </DialogHeader>
+          
           <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
-              <Input
-                id="name"
-                value={formValues.name}
-                onChange={(e) => setFormValues({...formValues, name: e.target.value})}
-                placeholder="Airdrop name"
+            <div className="grid gap-2">
+              <Label htmlFor="name">Name</Label>
+              <Input 
+                id="name" 
+                value={editedAirdrop.name} 
+                onChange={(e) => setEditedAirdrop({...editedAirdrop, name: e.target.value})}
               />
             </div>
             
-            <div className="space-y-2">
+            <div className="grid gap-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formValues.description}
-                onChange={(e) => setFormValues({...formValues, description: e.target.value})}
-                placeholder="Brief description of the airdrop"
-                className="min-h-[80px]"
+              <Textarea 
+                id="description" 
+                value={editedAirdrop.description}
+                onChange={(e) => setEditedAirdrop({...editedAirdrop, description: e.target.value})}
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="category">Category *</Label>
-              <select
-                id="category"
-                className="w-full p-2 rounded-md border border-input bg-background"
-                value={formValues.category}
-                onChange={(e) => setFormValues({...formValues, category: e.target.value})}
+            <div className="grid gap-2">
+              <Label htmlFor="category">Category</Label>
+              <Select 
+                value={editedAirdrop.category}
+                onValueChange={(value) => setEditedAirdrop({...editedAirdrop, category: value})}
               >
-                <option value="">Select a category</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="estimatedValue">Estimated Value</Label>
-                <Input
-                  id="estimatedValue"
-                  value={formValues.estimatedValue}
-                  onChange={(e) => setFormValues({...formValues, estimatedValue: e.target.value})}
-                  placeholder="$100-500"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="difficulty">Difficulty</Label>
-                <select
-                  id="difficulty"
-                  className="w-full p-2 rounded-md border border-input bg-background"
-                  value={formValues.difficulty}
-                  onChange={(e) => setFormValues({...formValues, difficulty: e.target.value as "Easy" | "Medium" | "Hard"})}
-                >
-                  <option value="Easy">Easy</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Hard">Hard</option>
-                </select>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="link">Website Link</Label>
-              <Input
-                id="link"
-                type="url"
-                value={formValues.link}
-                onChange={(e) => setFormValues({...formValues, link: e.target.value})}
-                placeholder="https://example.com"
+            <div className="grid gap-2">
+              <Label htmlFor="link">Project Link</Label>
+              <Input 
+                id="link" 
+                value={editedAirdrop.link}
+                onChange={(e) => setEditedAirdrop({...editedAirdrop, link: e.target.value})}
               />
             </div>
             
-            <div className="space-y-2">
+            <div className="grid gap-2">
               <Label htmlFor="logo">Logo URL</Label>
-              <Input
-                id="logo"
-                value={formValues.logo}
-                onChange={(e) => setFormValues({...formValues, logo: e.target.value})}
-                placeholder="https://example.com/logo.png"
+              <Input 
+                id="logo" 
+                value={editedAirdrop.logo}
+                onChange={(e) => setEditedAirdrop({...editedAirdrop, logo: e.target.value})}
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="launchDate">Launch Date</Label>
-              <Input
-                id="launchDate"
-                type="date"
-                value={formValues.launchDate}
-                onChange={(e) => setFormValues({...formValues, launchDate: e.target.value})}
+            <div className="grid gap-2">
+              <Label htmlFor="estimatedValue">Estimated Value</Label>
+              <Input 
+                id="estimatedValue" 
+                value={editedAirdrop.estimatedValue}
+                onChange={(e) => setEditedAirdrop({...editedAirdrop, estimatedValue: e.target.value})}
               />
             </div>
             
-            <div className="space-y-4">
+            <div className="grid gap-2">
+              <Label htmlFor="difficulty">Difficulty</Label>
+              <Select 
+                value={editedAirdrop.difficulty}
+                onValueChange={(value: 'Easy' | 'Medium' | 'Hard') => setEditedAirdrop({...editedAirdrop, difficulty: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select difficulty" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Easy">Easy</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="Hard">Hard</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid gap-2">
               <div className="flex items-center justify-between">
                 <Label>Tasks</Label>
-                <Button type="button" size="sm" variant="outline" onClick={addTaskInput}>
-                  <Plus className="h-4 w-4 mr-1" /> Add Task
+                <Button type="button" variant="outline" size="sm" onClick={addTask}>
+                  Add Task
                 </Button>
               </div>
-              
-              {formValues.tasks.map((task, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Input
-                    value={task}
-                    onChange={(e) => handleTaskChange(index, e.target.value)}
-                    placeholder={`Task ${index + 1}`}
-                    className="flex-1"
-                  />
-                  <Button 
-                    type="button" 
-                    size="icon" 
-                    variant="outline" 
-                    onClick={() => removeTaskInput(index)}
-                    className="shrink-0"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+              <div className="space-y-2">
+                {editedAirdrop.tasks.map((task, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input 
+                      value={task}
+                      onChange={(e) => handleTaskChange(index, e.target.value)}
+                    />
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => removeTask(index)}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
+          
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEditSubmit}>
-              Update Airdrop
+            <Button onClick={handleEditSave}>
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Airdrop</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this airdrop? This action cannot be undone.
+              Are you sure you want to delete {airdrop.name}? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -322,13 +317,11 @@ const AirdropItem = ({ airdrop }: AirdropItemProps) => {
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleDeleteConfirm}>
-              Delete
+              Delete Airdrop
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </motion.div>
+    </>
   );
-};
-
-export default AirdropItem;
+}
