@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -52,16 +51,12 @@ export function LoginForm() {
     try {
       setIsLoading(true);
       
-      // Use the updated login function that now returns a boolean
-      const success = login(email, password);
+      const { success, error } = await login(email, password);
       
       if (success) {
-        toast({
-          title: "Success",
-          description: "You have successfully logged in",
-        });
+        // Success toast is shown in the auth context
       } else {
-        setLoginError("User not found. Please check if you're using the correct email and password, or register first.");
+        setLoginError(error || "User not found. Please check if you're using the correct email and password, or register first.");
         
         // Generate a new captcha after failed login attempt
         setCaptcha(generateCaptcha());

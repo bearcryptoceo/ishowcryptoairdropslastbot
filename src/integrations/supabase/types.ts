@@ -9,7 +9,245 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      airdrop_categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      airdrop_rankings: {
+        Row: {
+          airdrop_id: string | null
+          category: string | null
+          created_at: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          position: number
+          user_id: string
+        }
+        Insert: {
+          airdrop_id?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          position: number
+          user_id: string
+        }
+        Update: {
+          airdrop_id?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          position?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "airdrop_rankings_airdrop_id_fkey"
+            columns: ["airdrop_id"]
+            isOneToOne: false
+            referencedRelation: "airdrops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      airdrops: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          difficulty: string | null
+          id: string
+          is_completed: boolean | null
+          is_pinned: boolean | null
+          logo_url: string | null
+          name: string
+          reward_potential: string | null
+          time_required: string | null
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          id?: string
+          is_completed?: boolean | null
+          is_pinned?: boolean | null
+          logo_url?: string | null
+          name: string
+          reward_potential?: string | null
+          time_required?: string | null
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          id?: string
+          is_completed?: boolean | null
+          is_pinned?: boolean | null
+          logo_url?: string | null
+          name?: string
+          reward_potential?: string | null
+          time_required?: string | null
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          button_action: string | null
+          button_text: string | null
+          created_at: string | null
+          id: string
+          link: string | null
+          status: string
+          subtitle: string | null
+          time_left: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          button_action?: string | null
+          button_text?: string | null
+          created_at?: string | null
+          id?: string
+          link?: string | null
+          status: string
+          subtitle?: string | null
+          time_left?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          button_action?: string | null
+          button_text?: string | null
+          created_at?: string | null
+          id?: string
+          link?: string | null
+          status?: string
+          subtitle?: string | null
+          time_left?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          is_admin: boolean | null
+          is_video_creator: boolean | null
+          username: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id: string
+          is_admin?: boolean | null
+          is_video_creator?: boolean | null
+          username: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          is_admin?: boolean | null
+          is_video_creator?: boolean | null
+          username?: string
+        }
+        Relationships: []
+      }
+      tool_categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tools: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          difficulty: string | null
+          id: string
+          is_completed: boolean | null
+          is_pinned: boolean | null
+          logo_url: string | null
+          name: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          id?: string
+          is_completed?: boolean | null
+          is_pinned?: boolean | null
+          logo_url?: string | null
+          name: string
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          id?: string
+          is_completed?: boolean | null
+          is_pinned?: boolean | null
+          logo_url?: string | null
+          name?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,19 +1,23 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { User, Session } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "./use-toast";
 
-interface User {
+interface UserProfile {
   id: string;
   email: string;
   username: string;
   isVideoCreator: boolean;
-  isAdmin?: boolean;
+  isAdmin: boolean;
 }
 
 interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => boolean;
-  register: (email: string, username: string, password: string) => boolean;
-  logout: () => void;
+  user: UserProfile | null;
+  session: Session | null;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (email: string, username: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
   validateTelegramJoin: (username: string) => Promise<boolean>;
   generateCaptcha: () => { num1: number, num2: number, operator: string, answer: number };
@@ -21,23 +25,92 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Admin credentials - never exposing actual password to the client
+// Admin credentials
 const ADMIN_EMAIL = "malickirfan00@gmail.com";
 const ADMIN_USERNAME = "UmarCryptospace";
-const ADMIN_PASSWORD = "Irfan@123#13";
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user exists in local storage on mount
-    const storedUser = localStorage.getItem("crypto_tracker_user");
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      setUser(parsedUser);
-      setIsAuthenticated(true);
-    }
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log("Auth state changed:", event, session);
+        setSession(session);
+        
+        if (session) {
+          setIsAuthenticated(true);
+          
+          // Fetch user profile data
+          try {
+            const { data: profile, error } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+              
+            if (error) {
+              console.error("Error fetching profile:", error);
+              return;
+            }
+            
+            if (profile) {
+              setUser({
+                id: profile.id,
+                email: profile.email,
+                username: profile.username,
+                isVideoCreator: profile.is_video_creator,
+                isAdmin: profile.is_admin
+              });
+            }
+          } catch (error) {
+            console.error("Error in profile fetch:", error);
+          }
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setSession(session);
+        setIsAuthenticated(true);
+        
+        // Fetch user profile
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data, error }) => {
+            if (error) {
+              console.error("Error fetching profile on init:", error);
+              return;
+            }
+            
+            if (data) {
+              setUser({
+                id: data.id,
+                email: data.email,
+                username: data.username,
+                isVideoCreator: data.is_video_creator,
+                isAdmin: data.is_admin
+              });
+            }
+          });
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Generate a simple math captcha
@@ -75,131 +148,116 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const login = (email: string, password: string): boolean => {
+  const login = async (email: string, password: string) => {
     try {
-      // Fix: Convert email to lowercase for case-insensitive comparison
-      const normalizedEmail = email.toLowerCase().trim();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password: password
+      });
       
-      // Get users from localStorage
-      const storedUsers = localStorage.getItem("crypto_tracker_users") || "[]";
-      const users = JSON.parse(storedUsers);
-      
-      console.log("Attempting login with email:", normalizedEmail);
-      console.log("Available users:", users.map((u: any) => u.email.toLowerCase().trim()));
-      
-      // Special case for admin login - always check this first
-      if (
-        normalizedEmail === ADMIN_EMAIL.toLowerCase() && 
-        password === ADMIN_PASSWORD
-      ) {
-        console.log("Admin login successful");
-        const adminUser = {
-          id: "admin-1",
-          email: ADMIN_EMAIL,
-          username: ADMIN_USERNAME,
-          isVideoCreator: true,
-          isAdmin: true
-        };
-        
-        setUser(adminUser);
-        setIsAuthenticated(true);
-        localStorage.setItem("crypto_tracker_user", JSON.stringify(adminUser));
-        return true;
+      if (error) {
+        console.error("Login error:", error.message);
+        return { success: false, error: error.message };
       }
       
-      // Check if user exists with matching email and password - case insensitive for email
-      const matchedUser = users.find((u: any) => 
-        u.email.toLowerCase().trim() === normalizedEmail && u.password === password
-      );
+      toast({
+        title: "Success",
+        description: "You have successfully logged in",
+      });
       
-      console.log("Matched user:", matchedUser);
-      
-      if (!matchedUser) {
-        console.log("No user found matching credentials");
-        return false;
-      }
-      
-      // Create user with admin flag if applicable
-      const userWithRoles = {
-        ...matchedUser,
-        isAdmin: matchedUser.email.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase() && 
-                matchedUser.username.toLowerCase() === ADMIN_USERNAME.toLowerCase()
-      };
-      
-      delete userWithRoles.password; // Don't store password in session
-      
-      setUser(userWithRoles);
-      setIsAuthenticated(true);
-      localStorage.setItem("crypto_tracker_user", JSON.stringify(userWithRoles));
-      return true;
-    } catch (error) {
+      return { success: true };
+    } catch (error: any) {
       console.error("Login error:", error);
-      return false;
+      return { success: false, error: error.message || "Login failed" };
     }
   };
 
-  const register = (email: string, username: string, password: string): boolean => {
+  const register = async (email: string, username: string, password: string) => {
     try {
-      // Fix: Convert email and username to lowercase for case-insensitive comparison
-      const normalizedEmail = email.toLowerCase().trim();
-      const normalizedUsername = username.toLowerCase();
-      
-      // Check if users exist in localStorage and use default empty array if not
-      const storedUsers = localStorage.getItem("crypto_tracker_users") || "[]";
-      const users = JSON.parse(storedUsers);
-      
-      // Check if another user with same email or username already exists (case insensitive)
-      const emailExists = users.some((u: any) => u.email.toLowerCase().trim() === normalizedEmail);
-      const usernameExists = users.some((u: any) => u.username.toLowerCase() === normalizedUsername);
-      
-      if (emailExists || usernameExists) {
-        return false;
+      // Check if email already exists
+      const { data: existingUsers, error: checkError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', email.trim().toLowerCase());
+        
+      if (checkError) {
+        console.error("Error checking existing user:", checkError);
       }
       
-      // Check if the user is admin
-      const isAdmin = 
-        normalizedEmail === ADMIN_EMAIL.toLowerCase() && 
-        normalizedUsername === ADMIN_USERNAME.toLowerCase() && 
-        password === ADMIN_PASSWORD;
+      if (existingUsers && existingUsers.length > 0) {
+        return { success: false, error: "Email already in use" };
+      }
       
-      const newUser = {
-        id: `user-${Date.now()}`,
-        email,
-        username,
-        password, // Store password for login verification
-        isVideoCreator: isAdmin,
-        isAdmin
-      };
+      // Create new user
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password: password,
+        options: {
+          data: {
+            username: username
+          }
+        }
+      });
       
-      // Add user to users list
-      users.push(newUser);
-      localStorage.setItem("crypto_tracker_users", JSON.stringify(users));
+      if (error) {
+        console.error("Registration error:", error.message);
+        return { success: false, error: error.message };
+      }
       
-      // Create session user without password
-      const sessionUser = { ...newUser };
-      delete sessionUser.password;
+      // Check if this is the admin user and update profile accordingly
+      if (email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase() && 
+          username.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
+        
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ 
+            is_video_creator: true,
+            is_admin: true
+          })
+          .eq('id', data.user?.id);
+          
+        if (updateError) {
+          console.error("Error updating admin privileges:", updateError);
+        }
+      }
       
-      // Log the user in
-      setUser(sessionUser);
-      setIsAuthenticated(true);
-      localStorage.setItem("crypto_tracker_user", JSON.stringify(sessionUser));
-      return true;
-    } catch (error) {
+      toast({
+        title: "Success",
+        description: "Your account has been created",
+      });
+      
+      return { success: true };
+    } catch (error: any) {
       console.error("Registration error:", error);
-      return false;
+      return { success: false, error: error.message || "Registration failed" };
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem("crypto_tracker_user");
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("Logout error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to log out",
+        variant: "destructive",
+      });
+    } else {
+      setUser(null);
+      setSession(null);
+      setIsAuthenticated(false);
+      toast({
+        title: "Success",
+        description: "You have been logged out",
+      });
+    }
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        session,
         login,
         register,
         logout,

@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ExternalLink } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export function RegisterForm() {
   const [email, setEmail] = useState("");
@@ -16,6 +18,7 @@ export function RegisterForm() {
   const [showTelegramVerification, setShowTelegramVerification] = useState(false);
   const [captcha, setCaptcha] = useState({ num1: 0, num2: 0, operator: '+', answer: 0 });
   const [captchaAnswer, setCaptchaAnswer] = useState("");
+  const [registerError, setRegisterError] = useState<string | null>(null);
   
   const { register, validateTelegramJoin, generateCaptcha } = useAuth();
   const { toast } = useToast();
@@ -27,6 +30,7 @@ export function RegisterForm() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setRegisterError(null);
     
     if (!email || !password || !username) {
       toast({
@@ -67,27 +71,19 @@ export function RegisterForm() {
     try {
       setIsLoading(true);
       
-      // Use the updated register function that returns a boolean
-      const success = register(email, username, password);
+      const { success, error } = await register(email, username, password);
       
       if (success) {
-        toast({
-          title: "Success",
-          description: "Your account has been created",
-        });
+        // Success toast is shown in the auth context
       } else {
-        toast({
-          title: "Error",
-          description: "Failed to create account. Email or username may already exist.",
-          variant: "destructive",
-        });
+        setRegisterError(error || "Failed to create account. Email or username may already exist.");
+        
+        // Generate a new captcha
+        setCaptcha(generateCaptcha());
+        setCaptchaAnswer("");
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Something went wrong during registration",
-        variant: "destructive",
-      });
+      setRegisterError("Something went wrong during registration. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -245,6 +241,12 @@ export function RegisterForm() {
           </div>
         </form>
       </div>
+      {registerError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4 mr-2" />
+          <AlertDescription>{registerError}</AlertDescription>
+        </Alert>
+      )}
       <p className="text-sm text-muted-foreground text-center">
         By creating an account, you agree to our terms and conditions
       </p>

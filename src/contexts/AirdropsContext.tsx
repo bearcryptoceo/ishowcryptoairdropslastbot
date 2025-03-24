@@ -1,5 +1,9 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Airdrop, AirdropRanking, initialAirdrops, initialRankings, airdropCategories } from "@/data/airdrops";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export interface Event {
   id: string;
@@ -32,39 +36,10 @@ interface AirdropsContextType {
   addEvent: (event: Event) => void;
   updateEvent: (event: Event) => void;
   deleteEvent: (id: string) => void;
+  isLoading: boolean;
 }
 
 const AirdropsContext = createContext<AirdropsContextType | undefined>(undefined);
-
-const initialEvents: Event[] = [
-  {
-    id: "event-1",
-    title: "Arbitrum Airdrop Snapshot",
-    subtitle: "Layer 1 & Testnet",
-    status: "upcoming",
-    timeLeft: "2 days left",
-    buttonText: "View Details",
-    buttonAction: "view_details",
-    link: "https://arbitrum.io"
-  },
-  {
-    id: "event-2",
-    title: "LayerZero Testnet Phase 2",
-    subtitle: "Bridge Mining",
-    status: "live",
-    buttonText: "Join Testnet",
-    buttonAction: "join_testnet",
-    link: "https://layerzero.network"
-  },
-  {
-    id: "event-3",
-    title: "Weekly Video Summary",
-    subtitle: "By UmarCryptospace",
-    status: "coming_soon",
-    buttonText: "Get Notified",
-    buttonAction: "get_notified"
-  }
-];
 
 export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
   const [airdrops, setAirdrops] = useState<Airdrop[]>([]);
@@ -72,141 +47,705 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
   const [categories, setCategories] = useState<string[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [completedAirdrops, setCompletedAirdrops] = useState<Airdrop[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
 
+  // Load data when user is authenticated
   useEffect(() => {
-    const savedAirdrops = localStorage.getItem("airdrops");
-    if (savedAirdrops) {
-      setAirdrops(JSON.parse(savedAirdrops));
+    if (isAuthenticated && user) {
+      loadUserData();
     } else {
+      // Reset data when not authenticated
       setAirdrops([]);
-    }
-
-    const savedRankings = localStorage.getItem("airdrop_rankings");
-    if (savedRankings) {
-      setRankings(JSON.parse(savedRankings));
-    } else {
       setRankings([]);
-    }
-
-    const savedCategories = localStorage.getItem("airdrop_categories");
-    if (savedCategories) {
-      const parsedCategories = JSON.parse(savedCategories);
-      if (!parsedCategories.includes("My Ethereum 2.0 Airdrop")) {
-        parsedCategories.push("My Ethereum 2.0 Airdrop");
-      }
-      setCategories(parsedCategories);
-    } else {
-      const updatedCategories = [...airdropCategories];
-      if (!updatedCategories.includes("My Ethereum 2.0 Airdrop")) {
-        updatedCategories.push("My Ethereum 2.0 Airdrop");
-      }
-      setCategories(updatedCategories);
-    }
-
-    const savedEvents = localStorage.getItem("upcoming_events");
-    if (savedEvents) {
-      setEvents(JSON.parse(savedEvents));
-    } else {
-      setEvents(initialEvents);
-    }
-
-    const savedCompletedAirdrops = localStorage.getItem("completed_airdrops");
-    if (savedCompletedAirdrops) {
-      setCompletedAirdrops(JSON.parse(savedCompletedAirdrops));
-    } else {
+      setEvents([]);
       setCompletedAirdrops([]);
+      setIsLoading(false);
     }
-  }, []);
-
+  }, [isAuthenticated, user]);
+  
+  // Initial categories setup
   useEffect(() => {
-    localStorage.setItem("airdrops", JSON.stringify(airdrops));
-  }, [airdrops]);
+    if (isAuthenticated && user) {
+      loadCategories();
+    } else {
+      setCategories(airdropCategories);
+    }
+  }, [isAuthenticated, user]);
 
-  useEffect(() => {
-    localStorage.setItem("airdrop_rankings", JSON.stringify(rankings));
-  }, [rankings]);
-
-  useEffect(() => {
-    localStorage.setItem("airdrop_categories", JSON.stringify(categories));
-  }, [categories]);
-
-  useEffect(() => {
-    localStorage.setItem("upcoming_events", JSON.stringify(events));
-  }, [events]);
-
-  useEffect(() => {
-    localStorage.setItem("completed_airdrops", JSON.stringify(completedAirdrops));
-  }, [completedAirdrops]);
-
-  const toggleCompleted = (id: string) => {
-    setAirdrops(airdrops.map(airdrop => 
-      airdrop.id === id ? { ...airdrop, isCompleted: !airdrop.isCompleted } : airdrop
-    ));
+  const loadUserData = async () => {
+    setIsLoading(true);
+    
+    try {
+      // Load airdrops
+      const { data: airdropsData, error: airdropsError } = await supabase
+        .from('airdrops')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (airdropsError) {
+        console.error("Error loading airdrops:", airdropsError);
+        toast({
+          title: "Error",
+          description: "Failed to load airdrops data",
+          variant: "destructive",
+        });
+      } else {
+        const formattedAirdrops = airdropsData.map(item => ({
+          id: item.id,
+          name: item.name,
+          description: item.description || "",
+          category: item.category,
+          difficulty: item.difficulty || "Easy",
+          rewardPotential: item.reward_potential || "Low",
+          timeRequired: item.time_required || "1-2 hours",
+          url: item.url || "",
+          logoUrl: item.logo_url || "",
+          isCompleted: item.is_completed,
+          isPinned: item.is_pinned
+        }));
+        
+        setAirdrops(formattedAirdrops);
+        
+        // Set completed airdrops
+        setCompletedAirdrops(formattedAirdrops.filter(airdrop => airdrop.isCompleted));
+      }
+      
+      // Load rankings
+      const { data: rankingsData, error: rankingsError } = await supabase
+        .from('airdrop_rankings')
+        .select('*')
+        .order('position', { ascending: true });
+        
+      if (rankingsError) {
+        console.error("Error loading rankings:", rankingsError);
+      } else {
+        const formattedRankings = rankingsData.map(item => ({
+          id: item.id,
+          airdropId: item.airdrop_id || null,
+          name: item.name,
+          position: item.position,
+          logoUrl: item.logo_url || "",
+          category: item.category || ""
+        }));
+        
+        setRankings(formattedRankings);
+      }
+      
+      // Load events
+      const { data: eventsData, error: eventsError } = await supabase
+        .from('events')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (eventsError) {
+        console.error("Error loading events:", eventsError);
+      } else {
+        const formattedEvents = eventsData.map(item => ({
+          id: item.id,
+          title: item.title,
+          subtitle: item.subtitle || "",
+          status: item.status as "upcoming" | "live" | "coming_soon",
+          timeLeft: item.time_left,
+          buttonText: item.button_text,
+          buttonAction: item.button_action,
+          link: item.link
+        }));
+        
+        setEvents(formattedEvents);
+      }
+    } catch (error) {
+      console.error("Error in data loading:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
-
-  const togglePinned = (id: string) => {
-    setAirdrops(airdrops.map(airdrop => 
-      airdrop.id === id ? { ...airdrop, isPinned: !airdrop.isPinned } : airdrop
-    ));
-  };
-
-  const addAirdrop = (airdrop: Airdrop) => {
-    setAirdrops([...airdrops, airdrop]);
-  };
-
-  const updateAirdrop = (updatedAirdrop: Airdrop) => {
-    setAirdrops(airdrops.map(airdrop => 
-      airdrop.id === updatedAirdrop.id ? updatedAirdrop : airdrop
-    ));
-  };
-
-  const deleteAirdrop = (id: string) => {
-    setAirdrops(airdrops.filter(airdrop => airdrop.id !== id));
-    setRankings(rankings.filter(ranking => ranking.airdropId !== id));
-  };
-
-  const addRanking = (ranking: AirdropRanking) => {
-    setRankings([...rankings, ranking]);
-  };
-
-  const updateRanking = (updatedRanking: AirdropRanking) => {
-    setRankings(rankings.map(ranking => 
-      ranking.id === updatedRanking.id ? updatedRanking : ranking
-    ));
-  };
-
-  const deleteRanking = (id: string) => {
-    setRankings(rankings.filter(ranking => ranking.id !== id));
-  };
-
-  const addCategory = (category: string) => {
-    if (!categories.includes(category)) {
-      setCategories([...categories, category]);
+  
+  const loadCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('airdrop_categories')
+        .select('name');
+        
+      if (error) {
+        console.error("Error loading categories:", error);
+        
+        // If error, initialize with default categories
+        if (!categories.includes("My Ethereum 2.0 Airdrop")) {
+          const updatedCategories = [...airdropCategories, "My Ethereum 2.0 Airdrop"];
+          setCategories(updatedCategories);
+          
+          // Save default categories to the database
+          for (const category of updatedCategories) {
+            await supabase.from('airdrop_categories').insert({
+              user_id: user?.id,
+              name: category
+            });
+          }
+        }
+      } else if (data && data.length > 0) {
+        setCategories(data.map(item => item.name));
+      } else {
+        // No categories found, initialize with defaults
+        const updatedCategories = [...airdropCategories];
+        if (!updatedCategories.includes("My Ethereum 2.0 Airdrop")) {
+          updatedCategories.push("My Ethereum 2.0 Airdrop");
+        }
+        setCategories(updatedCategories);
+        
+        // Save default categories to the database
+        for (const category of updatedCategories) {
+          await supabase.from('airdrop_categories').insert({
+            user_id: user?.id,
+            name: category
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error in categories loading:", error);
     }
   };
 
-  const clearAllAirdrops = () => {
-    setAirdrops([]);
-    localStorage.setItem("airdrops", JSON.stringify([]));
+  const toggleCompleted = async (id: string) => {
+    try {
+      const airdrop = airdrops.find(a => a.id === id);
+      if (!airdrop) return;
+      
+      const newCompletedState = !airdrop.isCompleted;
+      
+      // Update in database
+      const { error } = await supabase
+        .from('airdrops')
+        .update({ is_completed: newCompletedState })
+        .eq('id', id);
+        
+      if (error) {
+        console.error("Error updating airdrop completion:", error);
+        return;
+      }
+      
+      // Update local state
+      setAirdrops(airdrops.map(airdrop => 
+        airdrop.id === id ? { ...airdrop, isCompleted: newCompletedState } : airdrop
+      ));
+      
+      // Update completed airdrops list
+      if (newCompletedState) {
+        setCompletedAirdrops([...completedAirdrops, { ...airdrop, isCompleted: true }]);
+      } else {
+        setCompletedAirdrops(completedAirdrops.filter(a => a.id !== id));
+      }
+    } catch (error) {
+      console.error("Error in toggle completed:", error);
+    }
   };
 
-  const clearPreAddedRankings = () => {
-    setRankings([]);
-    localStorage.setItem("airdrop_rankings", JSON.stringify([]));
+  const togglePinned = async (id: string) => {
+    try {
+      const airdrop = airdrops.find(a => a.id === id);
+      if (!airdrop) return;
+      
+      const newPinnedState = !airdrop.isPinned;
+      
+      // Update in database
+      const { error } = await supabase
+        .from('airdrops')
+        .update({ is_pinned: newPinnedState })
+        .eq('id', id);
+        
+      if (error) {
+        console.error("Error updating airdrop pinned state:", error);
+        return;
+      }
+      
+      // Update local state
+      setAirdrops(airdrops.map(airdrop => 
+        airdrop.id === id ? { ...airdrop, isPinned: newPinnedState } : airdrop
+      ));
+      
+      // Update in completed airdrops if present
+      setCompletedAirdrops(completedAirdrops.map(airdrop => 
+        airdrop.id === id ? { ...airdrop, isPinned: newPinnedState } : airdrop
+      ));
+    } catch (error) {
+      console.error("Error in toggle pinned:", error);
+    }
   };
 
-  const addEvent = (event: Event) => {
-    setEvents([...events, event]);
+  const addAirdrop = async (airdrop: Airdrop) => {
+    try {
+      if (!user) return;
+      
+      // Insert into database
+      const { data, error } = await supabase
+        .from('airdrops')
+        .insert({
+          user_id: user.id,
+          name: airdrop.name,
+          description: airdrop.description,
+          category: airdrop.category,
+          difficulty: airdrop.difficulty,
+          reward_potential: airdrop.rewardPotential,
+          time_required: airdrop.timeRequired,
+          url: airdrop.url,
+          logo_url: airdrop.logoUrl,
+          is_completed: airdrop.isCompleted,
+          is_pinned: airdrop.isPinned
+        })
+        .select();
+        
+      if (error) {
+        console.error("Error adding airdrop:", error);
+        toast({
+          title: "Error",
+          description: "Failed to add airdrop",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (data && data[0]) {
+        // Add to local state with the new ID from the database
+        const newAirdrop = {
+          ...airdrop,
+          id: data[0].id
+        };
+        
+        setAirdrops([newAirdrop, ...airdrops]);
+        
+        // Add to completed airdrops if it's completed
+        if (newAirdrop.isCompleted) {
+          setCompletedAirdrops([...completedAirdrops, newAirdrop]);
+        }
+        
+        toast({
+          title: "Success",
+          description: "Airdrop added successfully",
+        });
+      }
+    } catch (error) {
+      console.error("Error in add airdrop:", error);
+    }
   };
 
-  const updateEvent = (updatedEvent: Event) => {
-    setEvents(events.map(event => 
-      event.id === updatedEvent.id ? updatedEvent : event
-    ));
+  const updateAirdrop = async (updatedAirdrop: Airdrop) => {
+    try {
+      // Update in database
+      const { error } = await supabase
+        .from('airdrops')
+        .update({
+          name: updatedAirdrop.name,
+          description: updatedAirdrop.description,
+          category: updatedAirdrop.category,
+          difficulty: updatedAirdrop.difficulty,
+          reward_potential: updatedAirdrop.rewardPotential,
+          time_required: updatedAirdrop.timeRequired,
+          url: updatedAirdrop.url,
+          logo_url: updatedAirdrop.logoUrl,
+          is_completed: updatedAirdrop.isCompleted,
+          is_pinned: updatedAirdrop.isPinned
+        })
+        .eq('id', updatedAirdrop.id);
+        
+      if (error) {
+        console.error("Error updating airdrop:", error);
+        toast({
+          title: "Error",
+          description: "Failed to update airdrop",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Update local state
+      setAirdrops(airdrops.map(airdrop => 
+        airdrop.id === updatedAirdrop.id ? updatedAirdrop : airdrop
+      ));
+      
+      // Update completed airdrops
+      if (updatedAirdrop.isCompleted) {
+        const exists = completedAirdrops.some(a => a.id === updatedAirdrop.id);
+        if (exists) {
+          setCompletedAirdrops(completedAirdrops.map(airdrop => 
+            airdrop.id === updatedAirdrop.id ? updatedAirdrop : airdrop
+          ));
+        } else {
+          setCompletedAirdrops([...completedAirdrops, updatedAirdrop]);
+        }
+      } else {
+        setCompletedAirdrops(completedAirdrops.filter(airdrop => airdrop.id !== updatedAirdrop.id));
+      }
+      
+      toast({
+        title: "Success",
+        description: "Airdrop updated successfully",
+      });
+    } catch (error) {
+      console.error("Error in update airdrop:", error);
+    }
   };
 
-  const deleteEvent = (id: string) => {
-    setEvents(events.filter(event => event.id !== id));
+  const deleteAirdrop = async (id: string) => {
+    try {
+      // Delete from database
+      const { error } = await supabase
+        .from('airdrops')
+        .delete()
+        .eq('id', id);
+        
+      if (error) {
+        console.error("Error deleting airdrop:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete airdrop",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Update local state
+      setAirdrops(airdrops.filter(airdrop => airdrop.id !== id));
+      setCompletedAirdrops(completedAirdrops.filter(airdrop => airdrop.id !== id));
+      
+      // Remove any rankings associated with this airdrop
+      await supabase
+        .from('airdrop_rankings')
+        .delete()
+        .eq('airdrop_id', id);
+        
+      setRankings(rankings.filter(ranking => ranking.airdropId !== id));
+      
+      toast({
+        title: "Success",
+        description: "Airdrop deleted successfully",
+      });
+    } catch (error) {
+      console.error("Error in delete airdrop:", error);
+    }
+  };
+
+  const addRanking = async (ranking: AirdropRanking) => {
+    try {
+      if (!user) return;
+      
+      // Insert into database
+      const { data, error } = await supabase
+        .from('airdrop_rankings')
+        .insert({
+          user_id: user.id,
+          airdrop_id: ranking.airdropId,
+          name: ranking.name,
+          position: ranking.position,
+          logo_url: ranking.logoUrl,
+          category: ranking.category
+        })
+        .select();
+        
+      if (error) {
+        console.error("Error adding ranking:", error);
+        toast({
+          title: "Error",
+          description: "Failed to add ranking",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (data && data[0]) {
+        // Add to local state with the new ID from the database
+        const newRanking = {
+          ...ranking,
+          id: data[0].id
+        };
+        
+        setRankings([...rankings, newRanking]);
+        
+        toast({
+          title: "Success",
+          description: "Ranking added successfully",
+        });
+      }
+    } catch (error) {
+      console.error("Error in add ranking:", error);
+    }
+  };
+
+  const updateRanking = async (updatedRanking: AirdropRanking) => {
+    try {
+      // Update in database
+      const { error } = await supabase
+        .from('airdrop_rankings')
+        .update({
+          airdrop_id: updatedRanking.airdropId,
+          name: updatedRanking.name,
+          position: updatedRanking.position,
+          logo_url: updatedRanking.logoUrl,
+          category: updatedRanking.category
+        })
+        .eq('id', updatedRanking.id);
+        
+      if (error) {
+        console.error("Error updating ranking:", error);
+        toast({
+          title: "Error",
+          description: "Failed to update ranking",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Update local state
+      setRankings(rankings.map(ranking => 
+        ranking.id === updatedRanking.id ? updatedRanking : ranking
+      ));
+      
+      toast({
+        title: "Success",
+        description: "Ranking updated successfully",
+      });
+    } catch (error) {
+      console.error("Error in update ranking:", error);
+    }
+  };
+
+  const deleteRanking = async (id: string) => {
+    try {
+      // Delete from database
+      const { error } = await supabase
+        .from('airdrop_rankings')
+        .delete()
+        .eq('id', id);
+        
+      if (error) {
+        console.error("Error deleting ranking:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete ranking",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Update local state
+      setRankings(rankings.filter(ranking => ranking.id !== id));
+      
+      toast({
+        title: "Success",
+        description: "Ranking deleted successfully",
+      });
+    } catch (error) {
+      console.error("Error in delete ranking:", error);
+    }
+  };
+
+  const addCategory = async (category: string) => {
+    try {
+      if (!user) return;
+      
+      if (!categories.includes(category)) {
+        // Insert into database
+        const { error } = await supabase
+          .from('airdrop_categories')
+          .insert({
+            user_id: user.id,
+            name: category
+          });
+          
+        if (error) {
+          console.error("Error adding category:", error);
+          return;
+        }
+        
+        // Update local state
+        setCategories([...categories, category]);
+      }
+    } catch (error) {
+      console.error("Error in add category:", error);
+    }
+  };
+
+  const clearAllAirdrops = async () => {
+    try {
+      if (!user) return;
+      
+      // Delete all airdrops from database for this user
+      const { error } = await supabase
+        .from('airdrops')
+        .delete()
+        .eq('user_id', user.id);
+        
+      if (error) {
+        console.error("Error clearing airdrops:", error);
+        toast({
+          title: "Error",
+          description: "Failed to clear airdrops",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Clear local state
+      setAirdrops([]);
+      setCompletedAirdrops([]);
+      
+      toast({
+        title: "Success",
+        description: "All airdrops cleared successfully",
+      });
+    } catch (error) {
+      console.error("Error in clear all airdrops:", error);
+    }
+  };
+
+  const clearPreAddedRankings = async () => {
+    try {
+      if (!user) return;
+      
+      // Delete all rankings from database for this user
+      const { error } = await supabase
+        .from('airdrop_rankings')
+        .delete()
+        .eq('user_id', user.id);
+        
+      if (error) {
+        console.error("Error clearing rankings:", error);
+        toast({
+          title: "Error",
+          description: "Failed to clear rankings",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Clear local state
+      setRankings([]);
+      
+      toast({
+        title: "Success",
+        description: "All rankings cleared successfully",
+      });
+    } catch (error) {
+      console.error("Error in clear rankings:", error);
+    }
+  };
+
+  const addEvent = async (event: Event) => {
+    try {
+      if (!user) return;
+      
+      // Insert into database
+      const { data, error } = await supabase
+        .from('events')
+        .insert({
+          user_id: user.id,
+          title: event.title,
+          subtitle: event.subtitle,
+          status: event.status,
+          time_left: event.timeLeft,
+          button_text: event.buttonText,
+          button_action: event.buttonAction,
+          link: event.link
+        })
+        .select();
+        
+      if (error) {
+        console.error("Error adding event:", error);
+        toast({
+          title: "Error",
+          description: "Failed to add event",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (data && data[0]) {
+        // Add to local state with the new ID from the database
+        const newEvent = {
+          ...event,
+          id: data[0].id
+        };
+        
+        setEvents([...events, newEvent]);
+        
+        toast({
+          title: "Success",
+          description: "Event added successfully",
+        });
+      }
+    } catch (error) {
+      console.error("Error in add event:", error);
+    }
+  };
+
+  const updateEvent = async (updatedEvent: Event) => {
+    try {
+      // Update in database
+      const { error } = await supabase
+        .from('events')
+        .update({
+          title: updatedEvent.title,
+          subtitle: updatedEvent.subtitle,
+          status: updatedEvent.status,
+          time_left: updatedEvent.timeLeft,
+          button_text: updatedEvent.buttonText,
+          button_action: updatedEvent.buttonAction,
+          link: updatedEvent.link
+        })
+        .eq('id', updatedEvent.id);
+        
+      if (error) {
+        console.error("Error updating event:", error);
+        toast({
+          title: "Error",
+          description: "Failed to update event",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Update local state
+      setEvents(events.map(event => 
+        event.id === updatedEvent.id ? updatedEvent : event
+      ));
+      
+      toast({
+        title: "Success",
+        description: "Event updated successfully",
+      });
+    } catch (error) {
+      console.error("Error in update event:", error);
+    }
+  };
+
+  const deleteEvent = async (id: string) => {
+    try {
+      // Delete from database
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', id);
+        
+      if (error) {
+        console.error("Error deleting event:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete event",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Update local state
+      setEvents(events.filter(event => event.id !== id));
+      
+      toast({
+        title: "Success",
+        description: "Event deleted successfully",
+      });
+    } catch (error) {
+      console.error("Error in delete event:", error);
+    }
   };
 
   return (
@@ -230,7 +769,8 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
         clearPreAddedRankings,
         addEvent,
         updateEvent,
-        deleteEvent
+        deleteEvent,
+        isLoading
       }}
     >
       {children}
