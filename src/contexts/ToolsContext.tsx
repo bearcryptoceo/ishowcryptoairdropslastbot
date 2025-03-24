@@ -1,204 +1,117 @@
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { mockTools } from '@/data/airdrops';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { Tool, initialTools, toolCategories } from "@/data/airdrops";
-import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+// Update Tool interface to match database schema
+export interface Tool {
+  id: string;
+  name: string;
+  description?: string;
+  category: string;
+  difficulty?: string;
+  url?: string;
+  logoUrl?: string;
+  isCompleted: boolean;
+  isPinned: boolean;
+  userId?: string;
+  // Compatibility with UI components
+  link?: string; // alias for url
+  icon?: string; // alias for logoUrl
+  comingSoon?: boolean;
+}
 
 interface ToolsContextType {
   tools: Tool[];
-  categories: string[];
-  toggleCompleted: (id: string) => void;
-  togglePinned: (id: string) => void;
-  addTool: (tool: Tool) => void;
-  updateTool: (tool: Tool) => void;
-  deleteTool: (id: string) => void;
-  addCategory: (category: string) => void;
-  isLoading: boolean;
+  addTool: (tool: Omit<Tool, 'id'>) => Promise<void>;
+  updateTool: (id: string, tool: Partial<Tool>) => Promise<void>;
+  deleteTool: (id: string) => Promise<void>;
+  togglePinTool: (id: string) => Promise<void>;
+  toggleCompleteTool: (id: string) => Promise<void>;
 }
 
 const ToolsContext = createContext<ToolsContextType | undefined>(undefined);
 
 export const ToolsProvider = ({ children }: { children: ReactNode }) => {
   const [tools, setTools] = useState<Tool[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
 
-  // Load data when user is authenticated
+  // Load data from Supabase when user is authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
-      loadUserData();
+      fetchTools();
     } else {
-      // Reset data when not authenticated
-      setTools([]);
-      setIsLoading(false);
-    }
-  }, [isAuthenticated, user]);
-  
-  // Initial categories setup
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      loadCategories();
-    } else {
-      setCategories(toolCategories);
+      // Use mock data when not authenticated
+      setTools(mockTools.map(tool => ({
+        ...tool,
+        url: tool.link,
+        logoUrl: tool.icon,
+        isCompleted: false,
+        isPinned: false,
+        comingSoon: tool.comingSoon,
+      })));
     }
   }, [isAuthenticated, user]);
 
-  const loadUserData = async () => {
-    setIsLoading(true);
-    
+  const fetchTools = async () => {
+    if (!user) return;
+
     try {
-      // Load tools
       const { data, error } = await supabase
         .from('tools')
         .select('*')
-        .order('created_at', { ascending: false });
-        
+        .eq('user_id', user.id);
+
       if (error) {
-        console.error("Error loading tools:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load tools data",
-          variant: "destructive",
-        });
-      } else {
+        console.error('Error fetching tools:', error);
+        return;
+      }
+
+      if (data) {
+        // Map database fields to component fields
         const formattedTools = data.map(item => ({
           id: item.id,
           name: item.name,
-          description: item.description || "",
+          description: item.description,
           category: item.category,
-          difficulty: item.difficulty || "Easy",
-          url: item.url || "",
-          logoUrl: item.logo_url || "",
+          difficulty: item.difficulty,
+          url: item.url,
+          logoUrl: item.logo_url,
           isCompleted: item.is_completed,
-          isPinned: item.is_pinned
+          isPinned: item.is_pinned,
+          // Add compatibility fields
+          link: item.url,
+          icon: item.logo_url,
+          comingSoon: false,
         }));
         
         setTools(formattedTools);
       }
     } catch (error) {
-      console.error("Error in data loading:", error);
-    } finally {
-      setIsLoading(false);
+      console.error('Error fetching tools:', error);
     }
   };
-  
-  const loadCategories = async () => {
+
+  const addTool = async (tool: Omit<Tool, 'id'>) => {
+    if (!user) return;
+
     try {
       const { data, error } = await supabase
-        .from('tool_categories')
-        .select('name');
-        
-      if (error) {
-        console.error("Error loading categories:", error);
-        
-        // If error, initialize with default categories
-        setCategories(toolCategories);
-        
-        // Save default categories to the database
-        for (const category of toolCategories) {
-          await supabase.from('tool_categories').insert({
-            user_id: user?.id,
-            name: category
-          });
-        }
-      } else if (data && data.length > 0) {
-        setCategories(data.map(item => item.name));
-      } else {
-        // No categories found, initialize with defaults
-        setCategories(toolCategories);
-        
-        // Save default categories to the database
-        for (const category of toolCategories) {
-          await supabase.from('tool_categories').insert({
-            user_id: user?.id,
-            name: category
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Error in categories loading:", error);
-    }
-  };
-
-  const toggleCompleted = async (id: string) => {
-    try {
-      const tool = tools.find(t => t.id === id);
-      if (!tool) return;
-      
-      const newCompletedState = !tool.isCompleted;
-      
-      // Update in database
-      const { error } = await supabase
         .from('tools')
-        .update({ is_completed: newCompletedState })
-        .eq('id', id);
-        
-      if (error) {
-        console.error("Error updating tool completion:", error);
-        return;
-      }
-      
-      // Update local state
-      setTools(tools.map(tool => 
-        tool.id === id ? { ...tool, isCompleted: newCompletedState } : tool
-      ));
-    } catch (error) {
-      console.error("Error in toggle completed:", error);
-    }
-  };
-
-  const togglePinned = async (id: string) => {
-    try {
-      const tool = tools.find(t => t.id === id);
-      if (!tool) return;
-      
-      const newPinnedState = !tool.isPinned;
-      
-      // Update in database
-      const { error } = await supabase
-        .from('tools')
-        .update({ is_pinned: newPinnedState })
-        .eq('id', id);
-        
-      if (error) {
-        console.error("Error updating tool pinned state:", error);
-        return;
-      }
-      
-      // Update local state
-      setTools(tools.map(tool => 
-        tool.id === id ? { ...tool, isPinned: newPinnedState } : tool
-      ));
-    } catch (error) {
-      console.error("Error in toggle pinned:", error);
-    }
-  };
-
-  const addTool = async (tool: Tool) => {
-    try {
-      if (!user) return;
-      
-      // Insert into database
-      const { data, error } = await supabase
-        .from('tools')
-        .insert({
-          user_id: user.id,
-          name: tool.name,
-          description: tool.description,
-          category: tool.category,
-          difficulty: tool.difficulty,
-          url: tool.url,
-          logo_url: tool.logoUrl,
-          is_completed: tool.isCompleted,
-          is_pinned: tool.isPinned
-        })
+        .insert([
+          {
+            ...tool,
+            user_id: user.id,
+            is_completed: false,
+            is_pinned: false,
+          },
+        ])
         .select();
-        
+
       if (error) {
-        console.error("Error adding tool:", error);
+        console.error('Error adding tool:', error);
         toast({
           title: "Error",
           description: "Failed to add tool",
@@ -206,45 +119,51 @@ export const ToolsProvider = ({ children }: { children: ReactNode }) => {
         });
         return;
       }
-      
-      if (data && data[0]) {
-        // Add to local state with the new ID from the database
-        const newTool = {
-          ...tool,
-          id: data[0].id
-        };
-        
-        setTools([newTool, ...tools]);
-        
+
+      if (data && data.length > 0) {
+        const newTool = data[0];
+        setTools(prevTools => [...prevTools, {
+          id: newTool.id,
+          name: newTool.name,
+          description: newTool.description,
+          category: newTool.category,
+          difficulty: newTool.difficulty,
+          url: newTool.url,
+          logoUrl: newTool.logo_url,
+          isCompleted: newTool.is_completed,
+          isPinned: newTool.is_pinned,
+          link: newTool.url,
+          icon: newTool.logo_url,
+          comingSoon: false,
+        }]);
         toast({
           title: "Success",
           description: "Tool added successfully",
         });
       }
     } catch (error) {
-      console.error("Error in add tool:", error);
+      console.error('Error adding tool:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add tool",
+        variant: "destructive",
+      });
     }
   };
 
-  const updateTool = async (updatedTool: Tool) => {
+  const updateTool = async (id: string, tool: Partial<Tool>) => {
+    if (!user) return;
+
     try {
-      // Update in database
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('tools')
-        .update({
-          name: updatedTool.name,
-          description: updatedTool.description,
-          category: updatedTool.category,
-          difficulty: updatedTool.difficulty,
-          url: updatedTool.url,
-          logo_url: updatedTool.logoUrl,
-          is_completed: updatedTool.isCompleted,
-          is_pinned: updatedTool.isPinned
-        })
-        .eq('id', updatedTool.id);
-        
+        .update(tool)
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select();
+
       if (error) {
-        console.error("Error updating tool:", error);
+        console.error('Error updating tool:', error);
         toast({
           title: "Error",
           description: "Failed to update tool",
@@ -252,31 +171,54 @@ export const ToolsProvider = ({ children }: { children: ReactNode }) => {
         });
         return;
       }
-      
-      // Update local state
-      setTools(tools.map(tool => 
-        tool.id === updatedTool.id ? updatedTool : tool
-      ));
-      
-      toast({
-        title: "Success",
-        description: "Tool updated successfully",
-      });
+
+      if (data && data.length > 0) {
+        const updatedTool = data[0];
+        setTools(prevTools =>
+          prevTools.map(existingTool =>
+            existingTool.id === id ? {
+              id: updatedTool.id,
+              name: updatedTool.name,
+              description: updatedTool.description,
+              category: updatedTool.category,
+              difficulty: updatedTool.difficulty,
+              url: updatedTool.url,
+              logoUrl: updatedTool.logo_url,
+              isCompleted: updatedTool.is_completed,
+              isPinned: updatedTool.is_pinned,
+              link: updatedTool.url,
+              icon: updatedTool.logo_url,
+              comingSoon: false,
+            } : existingTool
+          )
+        );
+        toast({
+          title: "Success",
+          description: "Tool updated successfully",
+        });
+      }
     } catch (error) {
-      console.error("Error in update tool:", error);
+      console.error('Error updating tool:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update tool",
+        variant: "destructive",
+      });
     }
   };
 
   const deleteTool = async (id: string) => {
+    if (!user) return;
+
     try {
-      // Delete from database
       const { error } = await supabase
         .from('tools')
         .delete()
-        .eq('id', id);
-        
+        .eq('id', id)
+        .eq('user_id', user.id);
+
       if (error) {
-        console.error("Error deleting tool:", error);
+        console.error('Error deleting tool:', error);
         toast({
           title: "Error",
           description: "Failed to delete tool",
@@ -284,68 +226,167 @@ export const ToolsProvider = ({ children }: { children: ReactNode }) => {
         });
         return;
       }
-      
-      // Update local state
-      setTools(tools.filter(tool => tool.id !== id));
-      
+
+      setTools(prevTools => prevTools.filter(tool => tool.id !== id));
       toast({
         title: "Success",
         description: "Tool deleted successfully",
       });
     } catch (error) {
-      console.error("Error in delete tool:", error);
+      console.error('Error deleting tool:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete tool",
+        variant: "destructive",
+      });
     }
   };
 
-  const addCategory = async (category: string) => {
+  const togglePinTool = async (id: string) => {
+    if (!user) return;
+
     try {
-      if (!user) return;
-      
-      if (!categories.includes(category)) {
-        // Insert into database
-        const { error } = await supabase
-          .from('tool_categories')
-          .insert({
-            user_id: user.id,
-            name: category
-          });
-          
-        if (error) {
-          console.error("Error adding category:", error);
-          return;
-        }
-        
-        // Update local state
-        setCategories([...categories, category]);
+      const toolToUpdate = tools.find(tool => tool.id === id);
+      if (!toolToUpdate) {
+        console.error('Tool not found');
+        return;
+      }
+
+      const newPinState = !toolToUpdate.isPinned;
+
+      const { data, error } = await supabase
+        .from('tools')
+        .update({ is_pinned: newPinState })
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select();
+
+      if (error) {
+        console.error('Error pinning tool:', error);
+        toast({
+          title: "Error",
+          description: "Failed to pin tool",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const updatedTool = data[0];
+        setTools(prevTools =>
+          prevTools.map(existingTool =>
+            existingTool.id === id ? {
+              id: updatedTool.id,
+              name: updatedTool.name,
+              description: updatedTool.description,
+              category: updatedTool.category,
+              difficulty: updatedTool.difficulty,
+              url: updatedTool.url,
+              logoUrl: updatedTool.logo_url,
+              isCompleted: updatedTool.is_completed,
+              isPinned: updatedTool.is_pinned,
+              link: updatedTool.url,
+              icon: updatedTool.logo_url,
+              comingSoon: false,
+            } : existingTool
+          )
+        );
+        toast({
+          title: "Success",
+          description: `Tool ${newPinState ? 'pinned' : 'unpinned'} successfully`,
+        });
       }
     } catch (error) {
-      console.error("Error in add category:", error);
+      console.error('Error pinning tool:', error);
+      toast({
+        title: "Error",
+        description: "Failed to pin tool",
+        variant: "destructive",
+      });
     }
   };
 
-  return (
-    <ToolsContext.Provider 
-      value={{ 
-        tools, 
-        categories,
-        toggleCompleted, 
-        togglePinned,
-        addTool,
-        updateTool,
-        deleteTool,
-        addCategory,
-        isLoading
-      }}
-    >
-      {children}
-    </ToolsContext.Provider>
-  );
+  const toggleCompleteTool = async (id: string) => {
+    if (!user) return;
+
+    try {
+      const toolToUpdate = tools.find(tool => tool.id === id);
+      if (!toolToUpdate) {
+        console.error('Tool not found');
+        return;
+      }
+
+      const newCompleteState = !toolToUpdate.isCompleted;
+
+      const { data, error } = await supabase
+        .from('tools')
+        .update({ is_completed: newCompleteState })
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select();
+
+      if (error) {
+        console.error('Error completing tool:', error);
+        toast({
+          title: "Error",
+          description: "Failed to complete tool",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const updatedTool = data[0];
+        setTools(prevTools =>
+          prevTools.map(existingTool =>
+            existingTool.id === id ? {
+              id: updatedTool.id,
+              name: updatedTool.name,
+              description: updatedTool.description,
+              category: updatedTool.category,
+              difficulty: updatedTool.difficulty,
+              url: updatedTool.url,
+              logoUrl: updatedTool.logo_url,
+              isCompleted: updatedTool.is_completed,
+              isPinned: updatedTool.is_pinned,
+              link: updatedTool.url,
+              icon: updatedTool.logo_url,
+              comingSoon: false,
+            } : existingTool
+          )
+        );
+        toast({
+          title: "Success",
+          description: `Tool ${newCompleteState ? 'completed' : 'uncompleted'} successfully`,
+        });
+      }
+    } catch (error) {
+      console.error('Error completing tool:', error);
+      toast({
+        title: "Error",
+        description: "Failed to complete tool",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Context value
+  const value = {
+    tools,
+    addTool,
+    updateTool,
+    deleteTool,
+    togglePinTool,
+    toggleCompleteTool,
+  };
+
+  return <ToolsContext.Provider value={value}>{children}</ToolsContext.Provider>;
 };
 
 export const useTools = () => {
   const context = useContext(ToolsContext);
   if (context === undefined) {
-    throw new Error("useTools must be used within a ToolsProvider");
+    throw new Error('useTools must be used within a ToolsProvider');
   }
   return context;
 };

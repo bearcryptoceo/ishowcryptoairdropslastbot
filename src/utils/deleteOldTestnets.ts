@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 // Names of testnets to be deleted
 const testnetNamesToDelete = [
@@ -11,8 +10,6 @@ const testnetNamesToDelete = [
 ];
 
 export const deleteOldTestnets = async (userId: string) => {
-  const { toast } = useToast();
-  
   try {
     const { error } = await supabase
       .from('airdrops')
@@ -22,19 +19,10 @@ export const deleteOldTestnets = async (userId: string) => {
       
     if (error) {
       console.error("Error deleting old testnets:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete old testnets",
-        variant: "destructive",
-      });
       return false;
     }
     
-    toast({
-      title: "Success",
-      description: "Old testnets have been removed",
-    });
-    
+    console.log("Successfully deleted old testnets for user:", userId);
     return true;
   } catch (error) {
     console.error("Error in deleteOldTestnets:", error);

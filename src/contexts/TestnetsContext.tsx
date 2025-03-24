@@ -1,217 +1,119 @@
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { mockTestnets } from '@/data/airdrops';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { Testnet, initialTestnets, airdropCategories } from "@/data/airdrops";
-import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+// Update Testnet interface to match database schema
+export interface Testnet {
+  id: string;
+  name: string;
+  description?: string;
+  category: string;
+  link?: string;
+  logo?: string;
+  estimatedReward?: string;
+  difficulty?: string;
+  tasks?: string[];
+  startDate?: string;
+  endDate?: string;
+  isActive?: boolean;
+  isCompleted: boolean;
+  isPinned: boolean;
+  userId?: string;
+}
 
 interface TestnetsContextType {
   testnets: Testnet[];
-  categories: string[];
-  completedTestnets: Testnet[];
-  toggleCompleted: (id: string) => void;
-  togglePinned: (id: string) => void;
-  addTestnet: (testnet: Testnet) => void;
-  updateTestnet: (testnet: Testnet) => void;
-  deleteTestnet: (id: string) => void;
-  addCategory: (category: string) => void;
-  clearAllTestnets: () => void;
-  isLoading: boolean;
+  addTestnet: (testnet: Omit<Testnet, 'id'>) => Promise<void>;
+  updateTestnet: (id: string, testnet: Partial<Testnet>) => Promise<void>;
+  deleteTestnet: (id: string) => Promise<void>;
+  togglePinTestnet: (id: string) => Promise<void>;
+  toggleCompleteTestnet: (id: string) => Promise<void>;
 }
 
 const TestnetsContext = createContext<TestnetsContextType | undefined>(undefined);
 
 export const TestnetsProvider = ({ children }: { children: ReactNode }) => {
   const [testnets, setTestnets] = useState<Testnet[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [completedTestnets, setCompletedTestnets] = useState<Testnet[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
 
-  // Load data when user is authenticated
+  // Load data from Supabase when user is authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
-      loadUserData();
+      fetchTestnets();
     } else {
-      // Reset data when not authenticated
-      setTestnets([]);
-      setCompletedTestnets([]);
-      setIsLoading(false);
-    }
-  }, [isAuthenticated, user]);
-  
-  // Initial categories setup
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      loadCategories();
-    } else {
-      const defaultCategories = airdropCategories.filter(cat => 
-        cat === "Layer 2" || cat === "Layer 1" || cat === "Layer 1 & Testnet Mainnet" || cat === "My Ethereum 2.0 Airdrop"
-      );
-      setCategories(defaultCategories);
+      // Add default properties to mock data
+      setTestnets(mockTestnets.map(testnet => ({
+        ...testnet,
+        isCompleted: false,
+        isPinned: false
+      })));
     }
   }, [isAuthenticated, user]);
 
-  const loadUserData = async () => {
-    setIsLoading(true);
-    
+  const fetchTestnets = async () => {
+    if (!user) return;
+
     try {
-      // We'll reuse the airdrops table for testnets, filtering by a specific category
+      // We're storing testnets in the airdrops table, but with a specific category
       const { data, error } = await supabase
         .from('airdrops')
         .select('*')
-        .in('category', ['Layer 2', 'Layer 1', 'Layer 1 & Testnet Mainnet', 'My Ethereum 2.0 Airdrop'])
-        .order('created_at', { ascending: false });
-        
+        .eq('user_id', user.id)
+        .eq('category', 'testnet');
+
       if (error) {
-        console.error("Error loading testnets:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load testnets data",
-          variant: "destructive",
-        });
-      } else if (data) {
-        const formattedTestnets: Testnet[] = data.map(item => ({
+        console.error('Error fetching testnets:', error);
+        return;
+      }
+
+      if (data) {
+        // Map database fields to component fields
+        const formattedTestnets = data.map(item => ({
           id: item.id,
           name: item.name,
-          description: item.description || "",
-          category: item.category,
-          difficulty: (item.difficulty || "Easy") as "Easy" | "Medium" | "Hard",
-          link: item.url || "",
-          logo: item.logo_url || "",
-          estimatedReward: item.reward_potential || "Low",
+          description: item.description,
+          category: 'testnet',
+          link: item.url,
+          logo: item.logo_url,
+          estimatedReward: item.reward_potential,
+          difficulty: item.difficulty,
           tasks: [],
-          startDate: new Date().toISOString().split('T')[0],
-          endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          startDate: '',
+          endDate: '',
           isActive: true,
-          isCompleted: item.is_completed || false,
-          isPinned: item.is_pinned || false,
-          
-          // Database fields
-          rewardPotential: item.reward_potential || "",
-          timeRequired: item.time_required || "",
-          url: item.url || "",
-          logoUrl: item.logo_url || ""
+          isCompleted: item.is_completed,
+          isPinned: item.is_pinned
         }));
         
         setTestnets(formattedTestnets);
-        
-        // Set completed testnets
-        setCompletedTestnets(formattedTestnets.filter(testnet => testnet.isCompleted));
       }
     } catch (error) {
-      console.error("Error in data loading:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const loadCategories = async () => {
-    try {
-      // Reuse the existing airdrop categories focused on L1/L2
-      const defaultCategories = airdropCategories.filter(cat => 
-        cat === "Layer 2" || cat === "Layer 1" || cat === "Layer 1 & Testnet Mainnet" || cat === "My Ethereum 2.0 Airdrop"
-      );
-      
-      setCategories(defaultCategories);
-    } catch (error) {
-      console.error("Error in categories loading:", error);
+      console.error('Error fetching testnets:', error);
     }
   };
 
-  const toggleCompleted = async (id: string) => {
-    try {
-      const testnet = testnets.find(t => t.id === id);
-      if (!testnet) return;
-      
-      const newCompletedState = !testnet.isCompleted;
-      
-      // Update in database
-      const { error } = await supabase
-        .from('airdrops')  // Using the airdrops table
-        .update({ is_completed: newCompletedState })
-        .eq('id', id);
-        
-      if (error) {
-        console.error("Error updating testnet completion:", error);
-        return;
-      }
-      
-      // Update local state
-      setTestnets(testnets.map(testnet => 
-        testnet.id === id ? { ...testnet, isCompleted: newCompletedState } : testnet
-      ));
-      
-      // Update completed testnets
-      if (newCompletedState) {
-        // Add to completed testnets
-        setCompletedTestnets([...completedTestnets, {...testnet, isCompleted: true}]);
-      } else {
-        // Remove from completed testnets
-        setCompletedTestnets(completedTestnets.filter(testnet => testnet.id !== id));
-      }
-    } catch (error) {
-      console.error("Error in toggle completed:", error);
-    }
-  };
+  const addTestnet = async (testnet: Omit<Testnet, 'id'>) => {
+    if (!user) return;
 
-  const togglePinned = async (id: string) => {
     try {
-      const testnet = testnets.find(t => t.id === id);
-      if (!testnet) return;
-      
-      const newPinnedState = !testnet.isPinned;
-      
-      // Update in database
-      const { error } = await supabase
-        .from('airdrops')  // Using the airdrops table
-        .update({ is_pinned: newPinnedState })
-        .eq('id', id);
-        
-      if (error) {
-        console.error("Error updating testnet pinned state:", error);
-        return;
-      }
-      
-      // Update local state
-      setTestnets(testnets.map(testnet => 
-        testnet.id === id ? { ...testnet, isPinned: newPinnedState } : testnet
-      ));
-
-      // Also update in completed testnets
-      setCompletedTestnets(completedTestnets.map(testnet => 
-        testnet.id === id ? { ...testnet, isPinned: newPinnedState } : testnet
-      ));
-    } catch (error) {
-      console.error("Error in toggle pinned:", error);
-    }
-  };
-
-  const addTestnet = async (testnet: Testnet) => {
-    try {
-      if (!user) return;
-      
-      // Insert into database (using airdrops table)
       const { data, error } = await supabase
         .from('airdrops')
-        .insert({
-          user_id: user.id,
-          name: testnet.name,
-          description: testnet.description,
-          category: testnet.category,
-          difficulty: testnet.difficulty,
-          reward_potential: testnet.rewardPotential || testnet.estimatedReward,
-          time_required: testnet.timeRequired || "1-2 hours",
-          url: testnet.url || testnet.link,
-          logo_url: testnet.logoUrl || testnet.logo,
-          is_completed: testnet.isCompleted,
-          is_pinned: testnet.isPinned
-        })
+        .insert([
+          {
+            ...testnet,
+            user_id: user.id,
+            category: 'testnet', // Ensure category is set to 'testnet'
+            is_completed: false,
+            is_pinned: false
+          },
+        ])
         .select();
-        
+
       if (error) {
-        console.error("Error adding testnet:", error);
+        console.error('Error adding testnet:', error);
         toast({
           title: "Error",
           description: "Failed to add testnet",
@@ -219,56 +121,55 @@ export const TestnetsProvider = ({ children }: { children: ReactNode }) => {
         });
         return;
       }
-      
-      if (data && data[0]) {
-        // Add to local state with the new ID from the database
-        const newTestnet: Testnet = {
-          ...testnet,
-          id: data[0].id,
-          rewardPotential: data[0].reward_potential,
-          timeRequired: data[0].time_required,
-          url: data[0].url,
-          logoUrl: data[0].logo_url
+
+      if (data && data.length > 0) {
+        // Map database fields to component fields
+        const newTestnet = data[0];
+        const formattedTestnet = {
+          id: newTestnet.id,
+          name: newTestnet.name,
+          description: newTestnet.description,
+          category: 'testnet',
+          link: newTestnet.url,
+          logo: newTestnet.logo_url,
+          estimatedReward: newTestnet.reward_potential,
+          difficulty: newTestnet.difficulty,
+          tasks: [],
+          startDate: '',
+          endDate: '',
+          isActive: true,
+          isCompleted: newTestnet.is_completed,
+          isPinned: newTestnet.is_pinned
         };
-        
-        setTestnets([newTestnet, ...testnets]);
-        
-        // Add to completed testnets if it's completed
-        if (newTestnet.isCompleted) {
-          setCompletedTestnets([...completedTestnets, newTestnet]);
-        }
-        
+        setTestnets([...testnets, formattedTestnet]);
         toast({
           title: "Success",
           description: "Testnet added successfully",
         });
       }
     } catch (error) {
-      console.error("Error in add testnet:", error);
+      console.error('Error adding testnet:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add testnet",
+        variant: "destructive",
+      });
     }
   };
 
-  const updateTestnet = async (updatedTestnet: Testnet) => {
+  const updateTestnet = async (id: string, updates: Partial<Testnet>) => {
+    if (!user) return;
+
     try {
-      // Update in database
-      const { error } = await supabase
-        .from('airdrops')  // Using the airdrops table
-        .update({
-          name: updatedTestnet.name,
-          description: updatedTestnet.description,
-          category: updatedTestnet.category,
-          difficulty: updatedTestnet.difficulty,
-          reward_potential: updatedTestnet.rewardPotential || updatedTestnet.estimatedReward,
-          time_required: updatedTestnet.timeRequired || "1-2 hours",
-          url: updatedTestnet.url || updatedTestnet.link,
-          logo_url: updatedTestnet.logoUrl || updatedTestnet.logo,
-          is_completed: updatedTestnet.isCompleted,
-          is_pinned: updatedTestnet.isPinned
-        })
-        .eq('id', updatedTestnet.id);
-        
+      const { data, error } = await supabase
+        .from('airdrops')
+        .update(updates)
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select();
+
       if (error) {
-        console.error("Error updating testnet:", error);
+        console.error('Error updating testnet:', error);
         toast({
           title: "Error",
           description: "Failed to update testnet",
@@ -276,45 +177,56 @@ export const TestnetsProvider = ({ children }: { children: ReactNode }) => {
         });
         return;
       }
-      
-      // Update local state
-      setTestnets(testnets.map(testnet => 
-        testnet.id === updatedTestnet.id ? updatedTestnet : testnet
-      ));
 
-      // Also update in completed testnets if present
-      if (updatedTestnet.isCompleted) {
-        const existsInCompleted = completedTestnets.some(t => t.id === updatedTestnet.id);
-        if (existsInCompleted) {
-          setCompletedTestnets(completedTestnets.map(testnet => 
-            testnet.id === updatedTestnet.id ? updatedTestnet : testnet
-          ));
-        } else {
-          setCompletedTestnets([...completedTestnets, updatedTestnet]);
-        }
-      } else {
-        setCompletedTestnets(completedTestnets.filter(testnet => testnet.id !== updatedTestnet.id));
+      if (data && data.length > 0) {
+        // Map database fields to component fields
+        const updatedTestnet = data[0];
+        const formattedTestnet = {
+          id: updatedTestnet.id,
+          name: updatedTestnet.name,
+          description: updatedTestnet.description,
+          category: 'testnet',
+          link: updatedTestnet.url,
+          logo: updatedTestnet.logo_url,
+          estimatedReward: updatedTestnet.reward_potential,
+          difficulty: updatedTestnet.difficulty,
+          tasks: [],
+          startDate: '',
+          endDate: '',
+          isActive: true,
+          isCompleted: updatedTestnet.is_completed,
+          isPinned: updatedTestnet.is_pinned
+        };
+        setTestnets(
+          testnets.map((testnet) => (testnet.id === id ? formattedTestnet : testnet))
+        );
+        toast({
+          title: "Success",
+          description: "Testnet updated successfully",
+        });
       }
-      
-      toast({
-        title: "Success",
-        description: "Testnet updated successfully",
-      });
     } catch (error) {
-      console.error("Error in update testnet:", error);
+      console.error('Error updating testnet:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update testnet",
+        variant: "destructive",
+      });
     }
   };
 
   const deleteTestnet = async (id: string) => {
+    if (!user) return;
+
     try {
-      // Delete from database
       const { error } = await supabase
-        .from('airdrops')  // Using the airdrops table
+        .from('airdrops')
         .delete()
-        .eq('id', id);
-        
+        .eq('id', id)
+        .eq('user_id', user.id);
+
       if (error) {
-        console.error("Error deleting testnet:", error);
+        console.error('Error deleting testnet:', error);
         toast({
           title: "Error",
           description: "Failed to delete testnet",
@@ -322,85 +234,171 @@ export const TestnetsProvider = ({ children }: { children: ReactNode }) => {
         });
         return;
       }
-      
-      // Update local state
-      setTestnets(testnets.filter(testnet => testnet.id !== id));
-      setCompletedTestnets(completedTestnets.filter(testnet => testnet.id !== id));
-      
+
+      setTestnets(testnets.filter((testnet) => testnet.id !== id));
       toast({
         title: "Success",
         description: "Testnet deleted successfully",
       });
     } catch (error) {
-      console.error("Error in delete testnet:", error);
+      console.error('Error deleting testnet:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete testnet",
+        variant: "destructive",
+      });
     }
   };
 
-  const addCategory = async (category: string) => {
-    if (!categories.includes(category)) {
-      setCategories([...categories, category]);
-    }
-  };
+  const togglePinTestnet = async (id: string) => {
+    if (!user) return;
 
-  const clearAllTestnets = async () => {
     try {
-      if (!user) return;
-      
-      // Delete all testnets from database for this user (filtered by relevant categories)
-      const { error } = await supabase
-        .from('airdrops')  // Using the airdrops table
-        .delete()
+      const testnetToUpdate = testnets.find((testnet) => testnet.id === id);
+      if (!testnetToUpdate) {
+        console.error('Testnet not found');
+        return;
+      }
+
+      const newPinState = !testnetToUpdate.isPinned;
+
+      const { data, error } = await supabase
+        .from('airdrops')
+        .update({ is_pinned: newPinState })
+        .eq('id', id)
         .eq('user_id', user.id)
-        .in('category', ['Layer 2', 'Layer 1', 'Layer 1 & Testnet Mainnet', 'My Ethereum 2.0 Airdrop']);
-        
+        .select();
+
       if (error) {
-        console.error("Error clearing testnets:", error);
+        console.error('Error toggling pin state:', error);
         toast({
           title: "Error",
-          description: "Failed to clear testnets",
+          description: "Failed to toggle pin state",
           variant: "destructive",
         });
         return;
       }
-      
-      // Clear local state
-      setTestnets([]);
-      setCompletedTestnets([]);
-      
-      toast({
-        title: "Success",
-        description: "All testnets cleared successfully",
-      });
+
+      if (data && data.length > 0) {
+        // Map database fields to component fields
+        const updatedTestnet = data[0];
+        const formattedTestnet = {
+          id: updatedTestnet.id,
+          name: updatedTestnet.name,
+          description: updatedTestnet.description,
+          category: 'testnet',
+          link: updatedTestnet.url,
+          logo: updatedTestnet.logo_url,
+          estimatedReward: updatedTestnet.reward_potential,
+          difficulty: updatedTestnet.difficulty,
+          tasks: [],
+          startDate: '',
+          endDate: '',
+          isActive: true,
+          isCompleted: updatedTestnet.is_completed,
+          isPinned: updatedTestnet.is_pinned
+        };
+        setTestnets(
+          testnets.map((testnet) => (testnet.id === id ? formattedTestnet : testnet))
+        );
+        toast({
+          title: "Success",
+          description: "Testnet pin state toggled successfully",
+        });
+      }
     } catch (error) {
-      console.error("Error in clear all testnets:", error);
+      console.error('Error toggling pin state:', error);
+      toast({
+        title: "Error",
+        description: "Failed to toggle pin state",
+        variant: "destructive",
+      });
     }
   };
 
-  return (
-    <TestnetsContext.Provider 
-      value={{ 
-        testnets, 
-        categories,
-        completedTestnets,
-        toggleCompleted, 
-        togglePinned,
-        addTestnet,
-        updateTestnet,
-        deleteTestnet,
-        addCategory,
-        clearAllTestnets,
-        isLoading
-      }}
-    >
-      {children}
-    </TestnetsContext.Provider>
-  );
+  const toggleCompleteTestnet = async (id: string) => {
+    if (!user) return;
+
+    try {
+      const testnetToUpdate = testnets.find((testnet) => testnet.id === id);
+      if (!testnetToUpdate) {
+        console.error('Testnet not found');
+        return;
+      }
+
+      const newCompleteState = !testnetToUpdate.isCompleted;
+
+      const { data, error } = await supabase
+        .from('airdrops')
+        .update({ is_completed: newCompleteState })
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select();
+
+      if (error) {
+        console.error('Error toggling complete state:', error);
+        toast({
+          title: "Error",
+          description: "Failed to toggle complete state",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data && data.length > 0) {
+        // Map database fields to component fields
+        const updatedTestnet = data[0];
+        const formattedTestnet = {
+          id: updatedTestnet.id,
+          name: updatedTestnet.name,
+          description: updatedTestnet.description,
+          category: 'testnet',
+          link: updatedTestnet.url,
+          logo: updatedTestnet.logo_url,
+          estimatedReward: updatedTestnet.reward_potential,
+          difficulty: updatedTestnet.difficulty,
+          tasks: [],
+          startDate: '',
+          endDate: '',
+          isActive: true,
+          isCompleted: updatedTestnet.is_completed,
+          isPinned: updatedTestnet.is_pinned
+        };
+        setTestnets(
+          testnets.map((testnet) => (testnet.id === id ? formattedTestnet : testnet))
+        );
+        toast({
+          title: "Success",
+          description: "Testnet complete state toggled successfully",
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling complete state:', error);
+      toast({
+        title: "Error",
+        description: "Failed to toggle complete state",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Context value
+  const value = {
+    testnets,
+    addTestnet,
+    updateTestnet,
+    deleteTestnet,
+    togglePinTestnet,
+    toggleCompleteTestnet,
+  };
+
+  return <TestnetsContext.Provider value={value}>{children}</TestnetsContext.Provider>;
 };
 
 export const useTestnets = () => {
   const context = useContext(TestnetsContext);
   if (context === undefined) {
-    throw new Error("useTestnets must be used within a TestnetsProvider");
+    throw new Error('useTestnets must be used within a TestnetsProvider');
   }
   return context;
 };
