@@ -3,34 +3,72 @@ export interface Airdrop {
   name: string;
   description: string;
   category: string;
+  difficulty: "Easy" | "Medium" | "Hard";
   link: string;
   logo: string;
   estimatedValue: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
   tasks: string[];
   launchDate: string;
-  isCompleted?: boolean;
-  isPinned?: boolean;
-  fundingAmount?: string;
-  rewards?: string;
-  timeCommitment?: string;
-  workRequired?: string;
-  links?: Array<{name: string, url: string}>;
+  isPinned: boolean;
+  isCompleted: boolean;
+  
+  rewardPotential?: string;
+  timeRequired?: string;
+  url?: string;
+  logoUrl?: string;
 }
 
 export interface AirdropRanking {
   id: string;
   airdropId: string;
-  fundingRating: number; // 1-5
-  popularityRating: number; // 1-5
+  fundingRating: number;
+  popularityRating: number;
   potentialValue: string;
   notes: string;
-  telegramLink?: string;
-  rank?: number;
-  isPinned?: boolean;
+  
+  name?: string;
+  position?: number;
+  logoUrl?: string;
+  category?: string;
 }
 
-// Initial airdrops data
+export interface Testnet {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  difficulty: "Easy" | "Medium" | "Hard";
+  link: string;
+  logo: string;
+  estimatedReward: string;
+  tasks: string[];
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  isPinned: boolean;
+  isCompleted: boolean;
+  
+  rewardPotential?: string;
+  timeRequired?: string;
+  url?: string;
+  logoUrl?: string;
+}
+
+export interface Tool {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  link: string;
+  icon: string;
+  isPinned: boolean;
+  isCompleted: boolean;
+  
+  difficulty?: string;
+  url?: string;
+  logoUrl?: string;
+}
+
 export const initialAirdrops: Airdrop[] = [
   {
     id: "airdrop-1",
@@ -43,6 +81,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Medium",
     tasks: ["Bridge assets to Arbitrum", "Swap tokens on Arbitrum", "Provide liquidity"],
     launchDate: "2023-03-23",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://arbitrum.io",
+    logoUrl: "https://cryptologos.cc/logos/arbitrum-arb-logo.png"
   },
   {
     id: "airdrop-2",
@@ -55,6 +99,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Easy",
     tasks: ["Bridge assets to Optimism", "Swap tokens on Optimism", "Use dApps on Optimism"],
     launchDate: "2022-05-31",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "Medium",
+    timeRequired: "1-2 weeks",
+    url: "https://optimism.io",
+    logoUrl: "https://cryptologos.cc/logos/optimism-op-logo.png"
   },
   {
     id: "airdrop-3",
@@ -67,6 +117,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Medium",
     tasks: ["Bridge across multiple chains", "Use Stargate Finance", "Provide liquidity"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://layerzero.network",
+    logoUrl: "https://pbs.twimg.com/profile_images/1464243285037633536/SrqQ0wTP_400x400.jpg"
   },
   {
     id: "airdrop-4",
@@ -79,6 +135,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Medium",
     tasks: ["Run a light node", "Participate in testnet", "Stake TIA tokens"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://celestia.org",
+    logoUrl: "https://cryptologos.cc/logos/celestia-tia-logo.png"
   },
   {
     id: "airdrop-5",
@@ -91,6 +153,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Medium",
     tasks: ["Bridge to zkSync", "Swap tokens", "Mint NFT on zkSync"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://zksync.io",
+    logoUrl: "https://zksync.io/logo.svg"
   },
   {
     id: "airdrop-6",
@@ -103,6 +171,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Hard",
     tasks: ["Bridge to Starknet", "Use dApps on Starknet", "Provide liquidity"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://starknet.io",
+    logoUrl: "https://cryptologos.cc/logos/starknet-strk-logo.png"
   },
   {
     id: "airdrop-7",
@@ -115,6 +189,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Easy",
     tasks: ["Bridge to Linea", "Swap tokens", "Interact with dApps"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://linea.build",
+    logoUrl: "https://cryptologos.cc/logos/placeholder.png"
   },
   {
     id: "airdrop-8",
@@ -127,6 +207,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Easy",
     tasks: ["Bridge to Base", "Interact with dApps", "Provide liquidity"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://base.org",
+    logoUrl: "https://cryptologos.cc/logos/placeholder.png"
   },
   {
     id: "airdrop-9",
@@ -139,6 +225,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Medium",
     tasks: ["Bridge to Scroll", "Interact with protocols", "Participate in testnet"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://scroll.io",
+    logoUrl: "https://cryptologos.cc/logos/placeholder.png"
   },
   {
     id: "airdrop-10",
@@ -151,6 +243,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Medium",
     tasks: ["Run a node", "Participate in testnet", "Bridge assets"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://taiko.xyz",
+    logoUrl: "https://cryptologos.cc/logos/placeholder.png"
   },
   {
     id: "airdrop-11",
@@ -163,6 +261,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Medium",
     tasks: ["Trade on dYdX", "Stake DYDX tokens", "Participate in governance"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://dydx.exchange",
+    logoUrl: "https://cryptologos.cc/logos/dydx-dydx-logo.png"
   },
   {
     id: "airdrop-12",
@@ -175,6 +279,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Medium",
     tasks: ["Participate in testnet", "Use Sui dApps", "Stake SUI tokens"],
     launchDate: "2023-05-03",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://sui.io",
+    logoUrl: "https://cryptologos.cc/logos/sui-sui-logo.png"
   },
   {
     id: "airdrop-13",
@@ -187,6 +297,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Medium",
     tasks: ["Participate in testnet", "Use Aptos dApps", "Provide liquidity"],
     launchDate: "2022-10-17",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://aptoslabs.com",
+    logoUrl: "https://cryptologos.cc/logos/aptos-apt-logo.png"
   },
   {
     id: "airdrop-14",
@@ -199,6 +315,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Medium",
     tasks: ["Stake ETH", "Restake through Eigenlayer", "Participate in AVSs"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://eigenlayer.xyz",
+    logoUrl: "https://cryptologos.cc/logos/placeholder.png"
   },
   {
     id: "airdrop-15",
@@ -211,6 +333,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Hard",
     tasks: ["Run a node", "Contribute compute resources", "Participate in testnet"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://gensyn.ai",
+    logoUrl: "https://cryptologos.cc/logos/placeholder.png"
   },
   {
     id: "airdrop-16",
@@ -223,6 +351,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Easy",
     tasks: ["Deposit in Aura pools", "Stake AURA tokens", "Participate in governance"],
     launchDate: "2022-06-23",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://aura.finance",
+    logoUrl: "https://cryptologos.cc/logos/aura-finance-aura-logo.png"
   },
   {
     id: "airdrop-17",
@@ -235,6 +369,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Medium",
     tasks: ["Bridge to Mantle", "Interact with dApps", "Provide liquidity"],
     launchDate: "2023-07-14",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://mantle.xyz",
+    logoUrl: "https://cryptologos.cc/logos/mantle-mnt-logo.png"
   },
   {
     id: "airdrop-18",
@@ -247,6 +387,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Medium",
     tasks: ["Bridge to Blast", "Deposit ETH/stablecoins", "Refer friends"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://blast.io",
+    logoUrl: "https://cryptologos.cc/logos/placeholder.png"
   },
   {
     id: "airdrop-19",
@@ -259,6 +405,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Medium",
     tasks: ["Bridge to Mode", "Interact with dApps", "Provide liquidity"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://mode.network",
+    logoUrl: "https://cryptologos.cc/logos/placeholder.png"
   },
   {
     id: "airdrop-20",
@@ -271,6 +423,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Medium",
     tasks: ["Perform atomic swaps", "Bridge assets", "Participate in testnet"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://www.portaldefi.com",
+    logoUrl: "https://cryptologos.cc/logos/placeholder.png"
   },
   {
     id: "airdrop-21",
@@ -283,6 +441,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Medium",
     tasks: ["Use private transactions", "Provide liquidity", "Participate in testnet"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://manta.network",
+    logoUrl: "https://cryptologos.cc/logos/manta-network-manta-logo.png"
   },
   {
     id: "airdrop-22",
@@ -295,6 +459,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Hard",
     tasks: ["Bridge to Fuel", "Interact with dApps", "Run a node"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://fuel.network",
+    logoUrl: "https://cryptologos.cc/logos/placeholder.png"
   },
   {
     id: "airdrop-23",
@@ -307,6 +477,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Easy",
     tasks: ["Stake ETH", "Participate in governance", "Provide liquidity for stETH"],
     launchDate: "2020-12-18",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://lido.fi",
+    logoUrl: "https://cryptologos.cc/logos/lido-dao-ldo-logo.png"
   },
   {
     id: "airdrop-24",
@@ -319,6 +495,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Medium",
     tasks: ["Trade yield tokens", "Provide liquidity", "Stake PENDLE"],
     launchDate: "2021-06-20",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://pendle.finance",
+    logoUrl: "https://cryptologos.cc/logos/pendle-pendle-logo.png"
   },
   {
     id: "airdrop-25",
@@ -331,6 +513,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Easy",
     tasks: ["Swap tokens cross-chain", "Bridge assets", "Provide liquidity"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://symbiosis.finance",
+    logoUrl: "https://cryptologos.cc/logos/placeholder.png"
   },
   {
     id: "airdrop-26",
@@ -343,6 +531,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Medium",
     tasks: ["Stake ETH", "Restake through Renzo", "Provide liquidity"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://renzo.xyz",
+    logoUrl: "https://cryptologos.cc/logos/placeholder.png"
   },
   {
     id: "airdrop-27",
@@ -355,6 +549,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Medium",
     tasks: ["Use Pyth oracles", "Participate in governance", "Integrate Pyth data"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://pyth.network",
+    logoUrl: "https://cryptologos.cc/logos/pyth-network-pyth-logo.png"
   },
   {
     id: "airdrop-28",
@@ -367,6 +567,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Medium",
     tasks: ["Bridge assets", "Use cross-chain messaging", "Provide liquidity"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://connext.network",
+    logoUrl: "https://cryptologos.cc/logos/placeholder.png"
   },
   {
     id: "airdrop-29",
@@ -379,6 +585,12 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Hard",
     tasks: ["Deploy contracts", "Participate in testnet", "Bridge assets"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://eclipse.builders",
+    logoUrl: "https://cryptologos.cc/logos/placeholder.png"
   },
   {
     id: "airdrop-30",
@@ -391,10 +603,15 @@ export const initialAirdrops: Airdrop[] = [
     difficulty: "Medium",
     tasks: ["Trade options/futures", "Provide liquidity", "Stake ZETA tokens"],
     launchDate: "TBD",
+    isPinned: false,
+    isCompleted: false,
+    rewardPotential: "High",
+    timeRequired: "1-2 weeks",
+    url: "https://zeta.markets",
+    logoUrl: "https://cryptologos.cc/logos/placeholder.png"
   }
 ];
 
-// Initial rankings data
 export const initialRankings: AirdropRanking[] = [
   {
     id: "ranking-1",
@@ -429,43 +646,31 @@ export const initialRankings: AirdropRanking[] = [
   }
 ];
 
-// Airdrop categories
 export const airdropCategories = [
-  "🏆 Top 10 Projects",
-  "🌐 Layer 1 & Testnet Mainnet",
-  "🤖 Telegram Bot Airdrops",
-  "📅 Daily Check-in Airdrops",
-  "🐦 Twitter Airdrops",
-  "📢 Social Airdrops",
-  "🤖 AI Airdrops",
-  "🔑 Wallet Airdrops",
-  "💱 Exchange Airdrops"
+  "Layer 1",
+  "Layer 2",
+  "Gaming",
+  "DeFi",
+  "NFT",
+  "DAO",
+  "Wallet",
+  "Infrastructure",
+  "Exchange",
+  "Social",
+  "Layer 1 & Testnet Mainnet",
+  "My Ethereum 2.0 Airdrop",
+  "Web3"
 ];
 
-// Tool categories
 export const toolCategories = [
-  "🔗 Wallet Connect",
-  "🔍 Airdrop Claim Checker",
-  "⛽ Gas Fee Calculator",
-  "🏦 Testnet Token Faucets",
-  "🔑 Crypto Wallet Extensions",
-  "🔄 Swaps & Bridges"
+  "DeFi Tools",
+  "NFT Tools",
+  "Analytics",
+  "Wallets",
+  "Security",
+  "Development"
 ];
 
-// Tool interface
-export interface Tool {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  link: string;
-  icon: string;
-  isCompleted?: boolean;
-  isPinned?: boolean;
-  comingSoon?: boolean;
-}
-
-// Initial tools
 export const initialTools: Tool[] = [
   {
     id: "tool-1",
@@ -523,25 +728,6 @@ export const initialTools: Tool[] = [
   }
 ];
 
-// Testnet interface
-export interface Testnet {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  link: string;
-  logo: string;
-  estimatedReward: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
-  tasks: string[];
-  startDate: string;
-  endDate: string;
-  isActive: boolean;
-  isCompleted?: boolean;
-  isPinned?: boolean;
-}
-
-// Initial testnets
 export const initialTestnets: Testnet[] = [
   {
     id: "testnet-1",

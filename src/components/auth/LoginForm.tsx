@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,10 @@ export function LoginForm() {
       
       if (success) {
         // Success toast is shown in the auth context
+        toast({
+          title: "Success",
+          description: "You have successfully logged in",
+        });
       } else {
         setLoginError(error || "User not found. Please check if you're using the correct email and password, or register first.");
         
@@ -63,6 +68,7 @@ export function LoginForm() {
         setCaptchaAnswer("");
       }
     } catch (error) {
+      console.error("Login error:", error);
       setLoginError("Something went wrong during login. Please try again.");
     } finally {
       setIsLoading(false);

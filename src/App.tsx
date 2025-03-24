@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { AppShell } from "@/components/layout/AppShell";
 import { AuthLayout } from "@/components/auth/AuthLayout";
@@ -24,13 +24,23 @@ import Explore from "@/pages/Explore";
 import { AirdropsProvider } from "@/contexts/AirdropsContext";
 import { ToolsProvider } from "@/contexts/ToolsContext";
 import { TestnetsProvider } from "@/contexts/TestnetsContext";
+import { useEffect } from "react";
+import { deleteOldTestnets } from "@/utils/deleteOldTestnets";
 
 const queryClient = new QueryClient();
 
 // Protected route wrapper component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // After user is authenticated, delete the old testnets 
+    if (isAuthenticated && user) {
+      deleteOldTestnets(user.id);
+    }
+  }, [isAuthenticated, user]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;

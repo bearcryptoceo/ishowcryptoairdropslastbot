@@ -71,19 +71,28 @@ export const TestnetsProvider = ({ children }: { children: ReactNode }) => {
           description: "Failed to load testnets data",
           variant: "destructive",
         });
-      } else {
-        const formattedTestnets = data.map(item => ({
+      } else if (data) {
+        const formattedTestnets: Testnet[] = data.map(item => ({
           id: item.id,
           name: item.name,
           description: item.description || "",
           category: item.category,
-          difficulty: item.difficulty || "Easy",
-          rewardPotential: item.reward_potential || "Low",
-          timeRequired: item.time_required || "1-2 hours",
+          difficulty: (item.difficulty || "Easy") as "Easy" | "Medium" | "Hard",
+          link: item.url || "",
+          logo: item.logo_url || "",
+          estimatedReward: item.reward_potential || "Low",
+          tasks: [],
+          startDate: new Date().toISOString().split('T')[0],
+          endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          isActive: true,
+          isCompleted: item.is_completed || false,
+          isPinned: item.is_pinned || false,
+          
+          // Database fields
+          rewardPotential: item.reward_potential || "",
+          timeRequired: item.time_required || "",
           url: item.url || "",
-          logoUrl: item.logo_url || "",
-          isCompleted: item.is_completed,
-          isPinned: item.is_pinned
+          logoUrl: item.logo_url || ""
         }));
         
         setTestnets(formattedTestnets);
@@ -192,10 +201,10 @@ export const TestnetsProvider = ({ children }: { children: ReactNode }) => {
           description: testnet.description,
           category: testnet.category,
           difficulty: testnet.difficulty,
-          reward_potential: testnet.rewardPotential,
-          time_required: testnet.timeRequired,
-          url: testnet.url,
-          logo_url: testnet.logoUrl,
+          reward_potential: testnet.rewardPotential || testnet.estimatedReward,
+          time_required: testnet.timeRequired || "1-2 hours",
+          url: testnet.url || testnet.link,
+          logo_url: testnet.logoUrl || testnet.logo,
           is_completed: testnet.isCompleted,
           is_pinned: testnet.isPinned
         })
@@ -213,9 +222,13 @@ export const TestnetsProvider = ({ children }: { children: ReactNode }) => {
       
       if (data && data[0]) {
         // Add to local state with the new ID from the database
-        const newTestnet = {
+        const newTestnet: Testnet = {
           ...testnet,
-          id: data[0].id
+          id: data[0].id,
+          rewardPotential: data[0].reward_potential,
+          timeRequired: data[0].time_required,
+          url: data[0].url,
+          logoUrl: data[0].logo_url
         };
         
         setTestnets([newTestnet, ...testnets]);
@@ -245,10 +258,10 @@ export const TestnetsProvider = ({ children }: { children: ReactNode }) => {
           description: updatedTestnet.description,
           category: updatedTestnet.category,
           difficulty: updatedTestnet.difficulty,
-          reward_potential: updatedTestnet.rewardPotential,
-          time_required: updatedTestnet.timeRequired,
-          url: updatedTestnet.url,
-          logo_url: updatedTestnet.logoUrl,
+          reward_potential: updatedTestnet.rewardPotential || updatedTestnet.estimatedReward,
+          time_required: updatedTestnet.timeRequired || "1-2 hours",
+          url: updatedTestnet.url || updatedTestnet.link,
+          logo_url: updatedTestnet.logoUrl || updatedTestnet.logo,
           is_completed: updatedTestnet.isCompleted,
           is_pinned: updatedTestnet.isPinned
         })
