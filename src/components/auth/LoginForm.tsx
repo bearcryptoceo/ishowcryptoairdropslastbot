@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -12,6 +14,7 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [captcha, setCaptcha] = useState({ num1: 0, num2: 0, operator: '+', answer: 0 });
   const [captchaAnswer, setCaptchaAnswer] = useState("");
+  const [loginError, setLoginError] = useState<string | null>(null);
   
   const { login, generateCaptcha } = useAuth();
   const { toast } = useToast();
@@ -23,6 +26,7 @@ export function LoginForm() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError(null);
     
     if (!email || !password) {
       toast({
@@ -57,22 +61,14 @@ export function LoginForm() {
           description: "You have successfully logged in",
         });
       } else {
-        toast({
-          title: "Error",
-          description: "User not found. Please register first or check your credentials.",
-          variant: "destructive",
-        });
+        setLoginError("User not found. Please check if you're using the correct email and password, or register first.");
         
         // Generate a new captcha after failed login attempt
         setCaptcha(generateCaptcha());
         setCaptchaAnswer("");
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Something went wrong during login",
-        variant: "destructive",
-      });
+      setLoginError("Something went wrong during login. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -86,6 +82,16 @@ export function LoginForm() {
           Enter your credentials to continue
         </p>
       </div>
+
+      {loginError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {loginError}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="grid gap-6">
         <form onSubmit={handleLogin}>
           <div className="grid gap-4">

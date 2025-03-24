@@ -78,22 +78,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = (email: string, password: string): boolean => {
     try {
       // Fix: Convert email to lowercase for case-insensitive comparison
-      const normalizedEmail = email.toLowerCase();
+      const normalizedEmail = email.toLowerCase().trim();
       
       // Get users from localStorage
       const storedUsers = localStorage.getItem("crypto_tracker_users") || "[]";
       const users = JSON.parse(storedUsers);
       
-      // Check if user exists with matching email and password - case insensitive for email
-      const matchedUser = users.find((u: any) => 
-        u.email.toLowerCase() === normalizedEmail && u.password === password
-      );
+      console.log("Attempting login with email:", normalizedEmail);
+      console.log("Available users:", users.map((u: any) => u.email.toLowerCase().trim()));
       
-      // Special case for admin login
+      // Special case for admin login - always check this first
       if (
         normalizedEmail === ADMIN_EMAIL.toLowerCase() && 
         password === ADMIN_PASSWORD
       ) {
+        console.log("Admin login successful");
         const adminUser = {
           id: "admin-1",
           email: ADMIN_EMAIL,
@@ -108,14 +107,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return true;
       }
       
+      // Check if user exists with matching email and password - case insensitive for email
+      const matchedUser = users.find((u: any) => 
+        u.email.toLowerCase().trim() === normalizedEmail && u.password === password
+      );
+      
+      console.log("Matched user:", matchedUser);
+      
       if (!matchedUser) {
+        console.log("No user found matching credentials");
         return false;
       }
       
       // Create user with admin flag if applicable
       const userWithRoles = {
         ...matchedUser,
-        isAdmin: matchedUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && 
+        isAdmin: matchedUser.email.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase() && 
                 matchedUser.username.toLowerCase() === ADMIN_USERNAME.toLowerCase()
       };
       
@@ -134,7 +141,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = (email: string, username: string, password: string): boolean => {
     try {
       // Fix: Convert email and username to lowercase for case-insensitive comparison
-      const normalizedEmail = email.toLowerCase();
+      const normalizedEmail = email.toLowerCase().trim();
       const normalizedUsername = username.toLowerCase();
       
       // Check if users exist in localStorage and use default empty array if not
@@ -142,7 +149,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const users = JSON.parse(storedUsers);
       
       // Check if another user with same email or username already exists (case insensitive)
-      const emailExists = users.some((u: any) => u.email.toLowerCase() === normalizedEmail);
+      const emailExists = users.some((u: any) => u.email.toLowerCase().trim() === normalizedEmail);
       const usernameExists = users.some((u: any) => u.username.toLowerCase() === normalizedUsername);
       
       if (emailExists || usernameExists) {
