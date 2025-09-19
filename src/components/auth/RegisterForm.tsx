@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -51,6 +50,15 @@ export function RegisterForm() {
       return;
     }
 
+    if (password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Verify captcha
     if (parseInt(captchaAnswer) !== captcha.answer) {
       toast({
@@ -63,27 +71,33 @@ export function RegisterForm() {
       return;
     }
 
-    // Verify Telegram join if not already verified
-    if (!telegramVerified) {
-      setShowTelegramVerification(true);
-      return;
-    }
-
     try {
       setIsLoading(true);
       
       const { success, error } = await register(email, username, password);
       
       if (success) {
-        // Success toast is shown in the auth context
+        toast({
+          title: "Success",
+          description: "Registration successful! Please check your email to verify your account.",
+        });
+        
+        // Clear form
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
+        setUsername("");
+        setCaptchaAnswer("");
+        setCaptcha(generateCaptcha());
       } else {
-        setRegisterError(error || "Failed to create account. Email or username may already exist.");
+        setRegisterError(error || "Failed to create account. Please try again.");
         
         // Generate a new captcha
         setCaptcha(generateCaptcha());
         setCaptchaAnswer("");
       }
     } catch (error) {
+      console.error("Registration error:", error);
       setRegisterError("Something went wrong during registration. Please try again.");
     } finally {
       setIsLoading(false);
@@ -174,6 +188,7 @@ export function RegisterForm() {
                 autoComplete="username"
                 autoCorrect="off"
                 disabled={isLoading}
+                required
               />
             </div>
             <div className="space-y-2">
@@ -188,6 +203,7 @@ export function RegisterForm() {
                 autoComplete="email"
                 autoCorrect="off"
                 disabled={isLoading}
+                required
               />
             </div>
             <div className="space-y-2">
@@ -199,6 +215,8 @@ export function RegisterForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="new-password"
                 disabled={isLoading}
+                required
+                minLength={6}
               />
             </div>
             <div className="space-y-2">
@@ -210,6 +228,7 @@ export function RegisterForm() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 autoComplete="new-password"
                 disabled={isLoading}
+                required
               />
             </div>
             <div className="space-y-2">
@@ -222,19 +241,8 @@ export function RegisterForm() {
                 value={captchaAnswer}
                 onChange={(e) => setCaptchaAnswer(e.target.value)}
                 disabled={isLoading}
+                required
               />
-            </div>
-            <div className="flex items-center space-x-2">
-              <input 
-                type="checkbox" 
-                id="telegramVerification"
-                checked={telegramVerified}
-                onChange={() => setShowTelegramVerification(true)}
-                className="h-4 w-4 rounded border-gray-300"
-              />
-              <Label htmlFor="telegramVerification" className="text-sm">
-                I have joined the Telegram channel
-              </Label>
             </div>
             <Button type="submit" disabled={isLoading}>
               {isLoading ? "Creating account..." : "Create account"}
@@ -244,7 +252,7 @@ export function RegisterForm() {
       </div>
       {registerError && (
         <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4 mr-2" />
+          <AlertCircle className="h-4 w-4" />
           <AlertDescription>{registerError}</AlertDescription>
         </Alert>
       )}
