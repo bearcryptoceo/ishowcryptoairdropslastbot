@@ -99,7 +99,7 @@ const Dashboard = () => {
     setEventFormValues({
       title: event.title,
       subtitle: event.subtitle,
-      status: event.status,
+      status: event.status as "upcoming" | "live" | "coming_soon",
       timeLeft: event.timeLeft || "",
       buttonText: event.buttonText,
       buttonAction: event.buttonAction,
@@ -142,7 +142,7 @@ const Dashboard = () => {
     };
     
     if (currentEvent) {
-      updateEvent(eventData);
+      updateEvent(currentEvent.id, eventData);
       toast({
         title: "Event updated",
         description: "Event has been updated successfully"

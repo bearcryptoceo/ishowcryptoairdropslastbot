@@ -52,7 +52,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { AirdropRanking, Airdrop } from "@/data/airdrops";
+import { AirdropRanking, Airdrop } from "@/contexts/AirdropsContext";
 
 const AirdropRankings = () => {
   const { airdrops, rankings, addRanking, updateRanking, deleteRanking, addAirdrop, clearPreAddedRankings } = useAirdrops();
@@ -168,7 +168,7 @@ const AirdropRankings = () => {
 
   // Handler for toggling pinned status
   const handleTogglePin = (ranking: AirdropRanking) => {
-    updateRanking({
+    updateRanking(ranking.id, {
       ...ranking,
       isPinned: !ranking.isPinned
     });
@@ -201,8 +201,7 @@ const AirdropRankings = () => {
 
     if (currentRanking) {
       // Update existing ranking
-      updateRanking({
-        id: currentRanking.id,
+      updateRanking(currentRanking.id, {
         airdropId: formValues.airdropId,
         fundingRating: Number(formValues.fundingRating),
         popularityRating: Number(formValues.popularityRating),
@@ -219,7 +218,6 @@ const AirdropRankings = () => {
     } else {
       // Add new ranking
       addRanking({
-        id: `ranking-${Date.now()}`,
         airdropId: formValues.airdropId,
         fundingRating: Number(formValues.fundingRating),
         popularityRating: Number(formValues.popularityRating),
@@ -252,7 +250,6 @@ const AirdropRankings = () => {
     // Add new airdrop
     const newAirdropId = `airdrop-${Date.now()}`;
     addAirdrop({
-      id: newAirdropId,
       name: airdropFormValues.name,
       description: airdropFormValues.description,
       category: airdropFormValues.category,

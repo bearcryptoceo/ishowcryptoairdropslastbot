@@ -385,7 +385,9 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
       const { error } = await supabase
         .from('airdrop_rankings')
         .insert({
-          ...ranking,
+          name: ranking.name || 'Unknown',
+          position: ranking.position || 1,
+          category: ranking.category,
           user_id: user.id,
           logo_url: ranking.logoUrl,
           airdrop_id: ranking.airdropId,

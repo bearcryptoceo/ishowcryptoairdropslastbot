@@ -47,7 +47,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Airdrop } from "@/data/airdrops";
+import { Airdrop } from "@/contexts/AirdropsContext";
 import { AirdropItem } from "@/components/airdrops/AirdropItem";
 
 const Airdrops = () => {
@@ -135,7 +135,6 @@ const Airdrops = () => {
       });
     } else {
       addAirdrop({
-        id: `airdrop-${Date.now()}`,
         name: formValues.name,
         description: formValues.description,
         category: formValues.category,
@@ -545,7 +544,7 @@ const Airdrops = () => {
 };
 
 type AirdropsListProps = {
-  airdrops: Airdrop[];
+  airdrops: import("@/contexts/AirdropsContext").Airdrop[];
   container: any;
   item: any;
 };

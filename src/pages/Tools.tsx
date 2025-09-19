@@ -37,7 +37,7 @@ import {
   Wrench,
   Landmark
 } from "lucide-react";
-import { Tool } from "@/data/airdrops";
+import { Tool } from "@/contexts/ToolsContext";
 
 // Map of icon names to components
 const iconMap: Record<string, React.ElementType> = {
@@ -148,14 +148,14 @@ const Tools = () => {
     } else {
       // Add new tool
       addTool({
-        id: `tool-${Date.now()}`,
         name: formValues.name,
         description: formValues.description,
         category: formValues.category,
         link: formValues.link,
         icon: formValues.icon,
         comingSoon: formValues.comingSoon,
-        isPinned: formValues.isPinned
+        isPinned: formValues.isPinned,
+        isCompleted: false
       });
       toast({
         title: "Tool Added",

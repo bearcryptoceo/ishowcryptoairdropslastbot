@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Airdrop } from "@/data/airdrops";
+import { Airdrop } from "@/contexts/AirdropsContext";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

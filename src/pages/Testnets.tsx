@@ -48,7 +48,7 @@ import {
   BarChart
 } from "lucide-react";
 import { format } from "date-fns";
-import { Testnet } from "@/data/airdrops";
+import { Testnet } from "@/contexts/TestnetsContext";
 
 const Testnets = () => {
   const { testnets, categories, toggleCompleted, togglePinned, addTestnet, updateTestnet, deleteTestnet, addCategory } = useTestnets();
