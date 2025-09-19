@@ -29,8 +29,8 @@ export interface Airdrop {
 // Update AirdropRanking interface to match database schema
 export interface AirdropRanking {
   id: string;
-  name: string;
-  position: number;
+  name?: string;
+  position?: number;
   category?: string;
   logoUrl?: string;
   airdropId?: string;
