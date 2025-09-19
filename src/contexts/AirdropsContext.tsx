@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { mockAirdrops, mockAirdropRankings } from '@/data/airdrops';
+import { initialAirdrops, mockAirdropRankings } from '@/data/airdrops';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -48,15 +48,36 @@ export interface AirdropRanking {
 interface AirdropsContextType {
   airdrops: Airdrop[];
   rankings: AirdropRanking[];
+  categories: string[];
   addAirdrop: (airdrop: Omit<Airdrop, 'id'>) => Promise<void>;
-  updateAirdrop: (id: string, airdrop: Partial<Airdrop>) => Promise<void>;
+  updateAirdrop: (airdrop: Airdrop) => Promise<void>;
   deleteAirdrop: (id: string) => Promise<void>;
-  togglePinAirdrop: (id: string) => Promise<void>;
-  toggleCompleteAirdrop: (id: string) => Promise<void>;
-  addAirdropRanking: (ranking: Omit<AirdropRanking, 'id'>) => Promise<void>;
-  updateAirdropRanking: (id: string, ranking: Partial<AirdropRanking>) => Promise<void>;
-  deleteAirdropRanking: (id: string) => Promise<void>;
-  togglePinAirdropRanking: (id: string) => Promise<void>;
+  toggleCompleted: (id: string) => Promise<void>;
+  togglePinned: (id: string) => Promise<void>;
+  addCategory: (category: string) => Promise<void>;
+  clearAllAirdrops: () => Promise<void>;
+  // Rankings functions
+  addRanking: (ranking: Omit<AirdropRanking, 'id'>) => Promise<void>;
+  updateRanking: (id: string, ranking: Partial<AirdropRanking>) => Promise<void>;
+  deleteRanking: (id: string) => Promise<void>;
+  clearPreAddedRankings: () => Promise<void>;
+  // Events functions
+  events: Event[];
+  addEvent: (event: Omit<Event, 'id'>) => Promise<void>;
+  updateEvent: (id: string, event: Partial<Event>) => Promise<void>;
+  deleteEvent: (id: string) => Promise<void>;
+}
+
+export interface Event {
+  id: string;
+  title: string;
+  subtitle?: string;
+  status: string;
+  timeLeft?: string;
+  buttonText?: string;
+  buttonAction?: string;
+  link?: string;
+  userId?: string;
 }
 
 const AirdropsContext = createContext<AirdropsContextType | undefined>(undefined);
@@ -64,6 +85,8 @@ const AirdropsContext = createContext<AirdropsContextType | undefined>(undefined
 export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
   const [airdrops, setAirdrops] = useState<Airdrop[]>([]);
   const [rankings, setRankings] = useState<AirdropRanking[]>([]);
+  const [categories, setCategories] = useState<string[]>(['Layer 2', 'Infrastructure', 'DeFi', 'Layer 1']);
+  const [events, setEvents] = useState<Event[]>([]);
   const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
 
@@ -74,7 +97,7 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
       fetchRankings();
     } else {
       // Use mock data when not authenticated
-      setAirdrops(mockAirdrops.map(airdrop => ({
+      setAirdrops(initialAirdrops.map(airdrop => ({
         ...airdrop,
         url: airdrop.link,
         logoUrl: airdrop.logo,
@@ -83,11 +106,8 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
         isCompleted: false
       })));
       
-      setRankings(mockAirdropRankings.map(ranking => ({
-        ...ranking,
-        position: ranking.rank || 0,
-        isPinned: false
-      })));
+      setRankings(mockAirdropRankings);
+      setEvents([]);
     }
   }, [isAuthenticated, user]);
 
@@ -215,19 +235,23 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateAirdrop = async (id: string, airdrop: Partial<Airdrop>) => {
+  const updateAirdrop = async (airdrop: Airdrop) => {
     if (!user) return;
 
     try {
       const { error } = await supabase
         .from('airdrops')
         .update({
-          ...airdrop,
-          reward_potential: airdrop.rewardPotential,
+          name: airdrop.name,
+          description: airdrop.description,
+          category: airdrop.category,
+          difficulty: airdrop.difficulty,
+          reward_potential: airdrop.rewardPotential || airdrop.estimatedValue,
           time_required: airdrop.timeRequired,
-          logo_url: airdrop.logoUrl,
+          url: airdrop.url || airdrop.link,
+          logo_url: airdrop.logoUrl || airdrop.logo,
         })
-        .eq('id', id);
+        .eq('id', airdrop.id);
 
       if (error) {
         console.error('Error updating airdrop:', error);
@@ -288,13 +312,16 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const togglePinAirdrop = async (id: string) => {
+  const togglePinned = async (id: string) => {
     if (!user) return;
 
     try {
+      const airdrop = airdrops.find(a => a.id === id);
+      if (!airdrop) return;
+      
       const { error } = await supabase
         .from('airdrops')
-        .update({ is_pinned: supabase.raw('NOT is_pinned') })
+        .update({ is_pinned: !airdrop.isPinned })
         .eq('id', id);
 
       if (error) {
@@ -318,13 +345,16 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const toggleCompleteAirdrop = async (id: string) => {
+  const toggleCompleted = async (id: string) => {
     if (!user) return;
 
     try {
+      const airdrop = airdrops.find(a => a.id === id);
+      if (!airdrop) return;
+      
       const { error } = await supabase
         .from('airdrops')
-        .update({ is_completed: supabase.raw('NOT is_completed') })
+        .update({ is_completed: !airdrop.isCompleted })
         .eq('id', id);
 
       if (error) {
@@ -348,7 +378,7 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addAirdropRanking = async (ranking: Omit<AirdropRanking, 'id'>) => {
+  const addRanking = async (ranking: Omit<AirdropRanking, 'id'>) => {
     if (!user) return;
 
     try {
@@ -386,7 +416,7 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateAirdropRanking = async (id: string, ranking: Partial<AirdropRanking>) => {
+  const updateRanking = async (id: string, ranking: Partial<AirdropRanking>) => {
     if (!user) return;
 
     try {
@@ -424,7 +454,7 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const deleteAirdropRanking = async (id: string) => {
+  const deleteRanking = async (id: string) => {
     if (!user) return;
 
     try {
@@ -458,33 +488,130 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const togglePinAirdropRanking = async (id: string) => {
+  const addCategory = async (category: string) => {
+    if (!user) return;
+    if (categories.includes(category)) return;
+    
+    try {
+      const { error } = await supabase
+        .from('airdrop_categories')
+        .insert([{ name: category, user_id: user.id }]);
+
+      if (error) {
+        console.error('Error adding category:', error);
+        return;
+      }
+
+      setCategories([...categories, category]);
+    } catch (error) {
+      console.error('Error adding category:', error);
+    }
+  };
+
+  const clearAllAirdrops = async () => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('airdrops')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error clearing airdrops:', error);
+        return;
+      }
+
+      setAirdrops([]);
+    } catch (error) {
+      console.error('Error clearing airdrops:', error);
+    }
+  };
+
+  const clearPreAddedRankings = async () => {
     if (!user) return;
 
     try {
       const { error } = await supabase
         .from('airdrop_rankings')
-        .update({ is_pinned: supabase.raw('NOT is_pinned') })
-        .eq('id', id);
+        .delete()
+        .eq('user_id', user.id);
 
       if (error) {
-        console.error('Error toggling pin airdrop ranking:', error);
-        toast({
-          title: "Error",
-          description: "Failed to toggle pin airdrop ranking",
-          variant: "destructive",
-        });
+        console.error('Error clearing rankings:', error);
         return;
       }
 
-      fetchRankings();
+      setRankings([]);
     } catch (error) {
-      console.error('Error toggling pin airdrop ranking:', error);
-      toast({
-        title: "Error",
-        description: "Failed to toggle pin airdrop ranking",
-        variant: "destructive",
-      });
+      console.error('Error clearing rankings:', error);
+    }
+  };
+
+  const addEvent = async (event: Omit<Event, 'id'>) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .insert([{ ...event, user_id: user.id }])
+        .select();
+
+      if (error) {
+        console.error('Error adding event:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setEvents([...events, data[0] as Event]);
+      }
+    } catch (error) {
+      console.error('Error adding event:', error);
+    }
+  };
+
+  const updateEvent = async (id: string, event: Partial<Event>) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .update(event)
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select();
+
+      if (error) {
+        console.error('Error updating event:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setEvents(events.map(e => e.id === id ? data[0] as Event : e));
+      }
+    } catch (error) {
+      console.error('Error updating event:', error);
+    }
+  };
+
+  const deleteEvent = async (id: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error deleting event:', error);
+        return;
+      }
+
+      setEvents(events.filter(e => e.id !== id));
+    } catch (error) {
+      console.error('Error deleting event:', error);
     }
   };
 
@@ -492,15 +619,22 @@ export const AirdropsProvider = ({ children }: { children: ReactNode }) => {
   const value = {
     airdrops,
     rankings,
+    categories,
+    events,
     addAirdrop,
     updateAirdrop,
     deleteAirdrop,
-    togglePinAirdrop,
-    toggleCompleteAirdrop,
-    addAirdropRanking,
-    updateAirdropRanking,
-    deleteAirdropRanking,
-    togglePinAirdropRanking,
+    toggleCompleted,
+    togglePinned,
+    addCategory,
+    clearAllAirdrops,
+    addRanking,
+    updateRanking,
+    deleteRanking,
+    clearPreAddedRankings,
+    addEvent,
+    updateEvent,
+    deleteEvent,
   };
 
   return <AirdropsContext.Provider value={value}>{children}</AirdropsContext.Provider>;

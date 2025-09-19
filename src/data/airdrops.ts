@@ -25,6 +25,9 @@ export interface AirdropRanking {
   popularityRating: number;
   potentialValue: string;
   notes: string;
+  telegramLink?: string;
+  rank?: number;
+  isPinned?: boolean;
   
   name?: string;
   position?: number;
@@ -63,6 +66,7 @@ export interface Tool {
   icon: string;
   isPinned: boolean;
   isCompleted: boolean;
+  comingSoon?: boolean;
   
   difficulty?: string;
   url?: string;
@@ -612,6 +616,40 @@ export const initialAirdrops: Airdrop[] = [
   }
 ];
 
+export const mockAirdropRankings: AirdropRanking[] = [
+  {
+    id: "ranking-1",
+    airdropId: "airdrop-1",
+    fundingRating: 5,
+    popularityRating: 5,
+    potentialValue: "Very High",
+    notes: "Major Layer 2 with significant backing and adoption",
+    telegramLink: "https://t.me/arbitrum",
+    rank: 1,
+    isPinned: true
+  },
+  {
+    id: "ranking-2",
+    airdropId: "airdrop-2",
+    fundingRating: 5,
+    popularityRating: 4,
+    potentialValue: "High",
+    notes: "Established Layer 2 with Coinbase backing",
+    telegramLink: "https://t.me/optimismFND",
+    rank: 2
+  },
+  {
+    id: "ranking-3",
+    airdropId: "airdrop-3",
+    fundingRating: 4,
+    popularityRating: 4,
+    potentialValue: "High",
+    notes: "Innovative cross-chain protocol with good partnerships",
+    telegramLink: "https://t.me/layerzerolabs",
+    rank: 3
+  }
+];
+
 export const initialRankings: AirdropRanking[] = [
   {
     id: "ranking-1",
@@ -671,7 +709,7 @@ export const toolCategories = [
   "Development"
 ];
 
-export const initialTools: Tool[] = [
+export const mockTools: Tool[] = [
   {
     id: "tool-1",
     name: "Gas Fee Calculator",
@@ -679,6 +717,8 @@ export const initialTools: Tool[] = [
     category: "Gas Fee Calculator",
     link: "https://ethgasstation.info/",
     icon: "Calculator",
+    isPinned: false,
+    isCompleted: false,
     comingSoon: false
   },
   {
@@ -688,6 +728,33 @@ export const initialTools: Tool[] = [
     category: "Wallet Connect",
     link: "https://debank.com/",
     icon: "Wallet",
+    isPinned: false,
+    isCompleted: false,
+    comingSoon: false
+  }
+];
+
+export const initialTools: Tool[] = [
+  {
+    id: "tool-1",
+    name: "Gas Fee Calculator",
+    description: "Calculate gas fees across different blockchain networks",
+    category: "Gas Fee Calculator",
+    link: "https://ethgasstation.info/",
+    icon: "Calculator",
+    isPinned: false,
+    isCompleted: false,
+    comingSoon: false
+  },
+  {
+    id: "tool-2",
+    name: "Wallet Tracker",
+    description: "Track your portfolio across multiple wallets",
+    category: "Wallet Connect",
+    link: "https://debank.com/",
+    icon: "Wallet",
+    isPinned: false,
+    isCompleted: false,
     comingSoon: false
   },
   {
@@ -697,6 +764,8 @@ export const initialTools: Tool[] = [
     category: "Crypto Wallet Extensions",
     link: "https://www.coingecko.com/",
     icon: "LineChart",
+    isPinned: false,
+    isCompleted: false,
     comingSoon: false
   },
   {
@@ -706,6 +775,8 @@ export const initialTools: Tool[] = [
     category: "Airdrop Claim Checker",
     link: "https://etherscan.io/",
     icon: "Coins",
+    isPinned: false,
+    isCompleted: false,
     comingSoon: false
   },
   {
@@ -715,6 +786,8 @@ export const initialTools: Tool[] = [
     category: "Gas Fee Calculator",
     link: "https://www.aprtoapy.com/",
     icon: "BarChart3",
+    isPinned: false,
+    isCompleted: false,
     comingSoon: false
   },
   {
@@ -724,9 +797,13 @@ export const initialTools: Tool[] = [
     category: "Swaps & Bridges",
     link: "https://1inch.io/",
     icon: "ArrowLeftRight",
+    isPinned: false,
+    isCompleted: false,
     comingSoon: false
   }
 ];
+
+export const mockTestnets: Testnet[] = [];
 
 export const initialTestnets: Testnet[] = [
   {
@@ -741,7 +818,9 @@ export const initialTestnets: Testnet[] = [
     tasks: ["Bridge assets", "Complete challenges", "Provide liquidity"],
     startDate: "2023-01-15",
     endDate: "2023-06-30",
-    isActive: true
+    isActive: true,
+    isPinned: false,
+    isCompleted: false
   },
   {
     id: "testnet-2",
@@ -755,7 +834,9 @@ export const initialTestnets: Testnet[] = [
     tasks: ["Deploy contracts", "Test transactions", "Complete quests"],
     startDate: "2023-02-10",
     endDate: "2023-07-15",
-    isActive: true
+    isActive: true,
+    isPinned: false,
+    isCompleted: false
   },
   {
     id: "testnet-3",
@@ -769,7 +850,9 @@ export const initialTestnets: Testnet[] = [
     tasks: ["Bridge ETH", "Deploy contracts", "Test transactions"],
     startDate: "2023-03-05",
     endDate: "2023-08-01",
-    isActive: true
+    isActive: true,
+    isPinned: false,
+    isCompleted: false
   },
   {
     id: "testnet-4",
@@ -783,7 +866,9 @@ export const initialTestnets: Testnet[] = [
     tasks: ["Deploy dApps", "Test cross-chain messaging", "Provide feedback"],
     startDate: "2023-01-20",
     endDate: "2023-09-15",
-    isActive: true
+    isActive: true,
+    isPinned: false,
+    isCompleted: false
   },
   {
     id: "testnet-5",
@@ -797,7 +882,9 @@ export const initialTestnets: Testnet[] = [
     tasks: ["Bridge ETH", "Swap tokens", "Deploy smart contracts"],
     startDate: "2023-04-12",
     endDate: "2023-10-30",
-    isActive: true
+    isActive: true,
+    isPinned: false,
+    isCompleted: false
   },
   {
     id: "testnet-6",
@@ -811,7 +898,9 @@ export const initialTestnets: Testnet[] = [
     tasks: ["Run a light node", "Validate transactions", "Participate in governance"],
     startDate: "2023-03-28",
     endDate: "2023-11-15",
-    isActive: true
+    isActive: true,
+    isPinned: false,
+    isCompleted: false
   },
   {
     id: "testnet-7",
@@ -825,6 +914,8 @@ export const initialTestnets: Testnet[] = [
     tasks: ["Bridge assets", "Deploy contracts", "Test dApps"],
     startDate: "2023-05-10",
     endDate: "2023-12-20",
-    isActive: true
+    isActive: true,
+    isPinned: false,
+    isCompleted: false
   }
 ];

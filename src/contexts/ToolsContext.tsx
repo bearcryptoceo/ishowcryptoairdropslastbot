@@ -24,17 +24,20 @@ export interface Tool {
 
 interface ToolsContextType {
   tools: Tool[];
+  categories: string[];
   addTool: (tool: Omit<Tool, 'id'>) => Promise<void>;
-  updateTool: (id: string, tool: Partial<Tool>) => Promise<void>;
+  updateTool: (tool: Tool) => Promise<void>;
   deleteTool: (id: string) => Promise<void>;
-  togglePinTool: (id: string) => Promise<void>;
-  toggleCompleteTool: (id: string) => Promise<void>;
+  toggleCompleted: (id: string) => Promise<void>;
+  togglePinned: (id: string) => Promise<void>;
+  addCategory: (category: string) => Promise<void>;
 }
 
 const ToolsContext = createContext<ToolsContextType | undefined>(undefined);
 
 export const ToolsProvider = ({ children }: { children: ReactNode }) => {
   const [tools, setTools] = useState<Tool[]>([]);
+  const [categories, setCategories] = useState<string[]>(['DeFi', 'Analytics', 'Development', 'Trading']);
   const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
 
@@ -151,14 +154,21 @@ export const ToolsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateTool = async (id: string, tool: Partial<Tool>) => {
+  const updateTool = async (tool: Tool) => {
     if (!user) return;
 
     try {
       const { data, error } = await supabase
         .from('tools')
-        .update(tool)
-        .eq('id', id)
+        .update({
+          name: tool.name,
+          description: tool.description,
+          category: tool.category,
+          url: tool.url || tool.link,
+          logo_url: tool.logoUrl || tool.icon,
+          difficulty: tool.difficulty,
+        })
+        .eq('id', tool.id)
         .eq('user_id', user.id)
         .select();
 
@@ -176,7 +186,7 @@ export const ToolsProvider = ({ children }: { children: ReactNode }) => {
         const updatedTool = data[0];
         setTools(prevTools =>
           prevTools.map(existingTool =>
-            existingTool.id === id ? {
+            existingTool.id === tool.id ? {
               id: updatedTool.id,
               name: updatedTool.name,
               description: updatedTool.description,
@@ -242,7 +252,7 @@ export const ToolsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const togglePinTool = async (id: string) => {
+  const togglePinned = async (id: string) => {
     if (!user) return;
 
     try {
@@ -306,7 +316,7 @@ export const ToolsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const toggleCompleteTool = async (id: string) => {
+  const toggleCompleted = async (id: string) => {
     if (!user) return;
 
     try {
@@ -370,14 +380,21 @@ export const ToolsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const addCategory = async (category: string) => {
+    if (categories.includes(category)) return;
+    setCategories([...categories, category]);
+  };
+
   // Context value
   const value = {
     tools,
+    categories,
     addTool,
     updateTool,
     deleteTool,
-    togglePinTool,
-    toggleCompleteTool,
+    toggleCompleted,
+    togglePinned,
+    addCategory,
   };
 
   return <ToolsContext.Provider value={value}>{children}</ToolsContext.Provider>;

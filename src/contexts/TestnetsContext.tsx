@@ -25,17 +25,20 @@ export interface Testnet {
 
 interface TestnetsContextType {
   testnets: Testnet[];
+  categories: string[];
   addTestnet: (testnet: Omit<Testnet, 'id'>) => Promise<void>;
-  updateTestnet: (id: string, testnet: Partial<Testnet>) => Promise<void>;
+  updateTestnet: (testnet: Testnet) => Promise<void>;
   deleteTestnet: (id: string) => Promise<void>;
-  togglePinTestnet: (id: string) => Promise<void>;
-  toggleCompleteTestnet: (id: string) => Promise<void>;
+  toggleCompleted: (id: string) => Promise<void>;
+  togglePinned: (id: string) => Promise<void>;
+  addCategory: (category: string) => Promise<void>;
 }
 
 const TestnetsContext = createContext<TestnetsContextType | undefined>(undefined);
 
 export const TestnetsProvider = ({ children }: { children: ReactNode }) => {
   const [testnets, setTestnets] = useState<Testnet[]>([]);
+  const [categories, setCategories] = useState<string[]>(['Layer 1', 'Layer 2', 'DeFi', 'Infrastructure']);
   const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
 
@@ -157,14 +160,22 @@ export const TestnetsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateTestnet = async (id: string, updates: Partial<Testnet>) => {
+  const updateTestnet = async (testnet: Testnet) => {
     if (!user) return;
 
     try {
       const { data, error } = await supabase
         .from('airdrops')
-        .update(updates)
-        .eq('id', id)
+        .update({
+          name: testnet.name,
+          description: testnet.description,
+          category: 'testnet',
+          url: testnet.link,
+          logo_url: testnet.logo,
+          difficulty: testnet.difficulty,
+          reward_potential: testnet.estimatedReward,
+        })
+        .eq('id', testnet.id)
         .eq('user_id', user.id)
         .select();
 
@@ -198,7 +209,7 @@ export const TestnetsProvider = ({ children }: { children: ReactNode }) => {
           isPinned: updatedTestnet.is_pinned
         };
         setTestnets(
-          testnets.map((testnet) => (testnet.id === id ? formattedTestnet : testnet))
+          testnets.map((t) => (t.id === testnet.id ? formattedTestnet : t))
         );
         toast({
           title: "Success",
@@ -250,7 +261,7 @@ export const TestnetsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const togglePinTestnet = async (id: string) => {
+  const togglePinned = async (id: string) => {
     if (!user) return;
 
     try {
@@ -316,7 +327,7 @@ export const TestnetsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const toggleCompleteTestnet = async (id: string) => {
+  const toggleCompleted = async (id: string) => {
     if (!user) return;
 
     try {
@@ -382,14 +393,21 @@ export const TestnetsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const addCategory = async (category: string) => {
+    if (categories.includes(category)) return;
+    setCategories([...categories, category]);
+  };
+
   // Context value
   const value = {
     testnets,
+    categories,
     addTestnet,
     updateTestnet,
     deleteTestnet,
-    togglePinTestnet,
-    toggleCompleteTestnet,
+    toggleCompleted,
+    togglePinned,
+    addCategory,
   };
 
   return <TestnetsContext.Provider value={value}>{children}</TestnetsContext.Provider>;
