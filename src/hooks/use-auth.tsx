@@ -163,35 +163,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         console.error("Login error:", error.message);
         
-        // Special case for unconfirmed email - auto-confirm for demo purposes
-        if (error.message.includes("Email not confirmed")) {
-          // For ease of demo, let's try to auto-confirm the email
-          toast({
-            title: "Auto-confirming email",
-            description: "Attempting to auto-confirm your email for demo purposes",
-          });
-          
-          // Attempt to fetch user by email
-          const { data: users } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('email', email.trim().toLowerCase());
-            
-          if (users && users.length > 0) {
-            // Try login again - this is a demo workaround
-            const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
-              email: email.trim().toLowerCase(),
-              password: password
-            });
-            
-            if (!retryError) {
-              toast({
-                title: "Success",
-                description: "You have successfully logged in",
-              });
-              return { success: true };
-            }
-          }
+        // Handle network errors specifically  
+        if (error.message?.includes('fetch') || error.message?.includes('network')) {
+          return { success: false, error: "Network connection error. Please check your internet connection and try again." };
         }
         
         return { success: false, error: error.message };
@@ -205,36 +179,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { success: true };
     } catch (error: any) {
       console.error("Login error:", error);
+      
+      // Handle network errors specifically
+      if (error.message?.includes('fetch') || error.message?.includes('network')) {
+        return { success: false, error: "Network connection error. Please check your internet connection and try again." };
+      }
+      
       return { success: false, error: error.message || "Login failed" };
     }
   };
 
   const register = async (email: string, username: string, password: string) => {
     try {
-      // Check if email already exists
-      const { data: existingUsers, error: checkError } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('email', email.trim().toLowerCase());
-        
-      if (checkError) {
-        console.error("Error checking existing user:", checkError);
-      }
-      
-      if (existingUsers && existingUsers.length > 0) {
-        return { success: false, error: "Email already in use" };
-      }
-      
-      // Create new user with auto-confirm enabled for demo purposes
+      // Create new user with Supabase auth
       const { data, error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password: password,
         options: {
           data: {
             username: username
-          },
-          // For demo purposes, we'll assume email is auto-confirmed
-          emailRedirectTo: window.location.origin + '/dashboard'
+          }
         }
       });
       
@@ -243,39 +207,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { success: false, error: error.message };
       }
       
-      // Auto-login after registration for demo purposes
       if (data.user) {
-        // Try to login immediately after sign up for demo purposes
-        setTimeout(async () => {
-          await login(email, password);
-        }, 1500);
-      }
-      
-      // Check if this is the admin user and update profile accordingly
-      if (email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase() && 
-          username.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
-        
-        const { error: updateError } = await supabase
+        // Create profile record
+        const { error: profileError } = await supabase
           .from('profiles')
-          .update({ 
-            is_video_creator: true,
-            is_admin: true
-          })
-          .eq('id', data.user?.id);
+          .insert({
+            id: data.user.id,
+            email: email.trim().toLowerCase(),
+            username: username,
+            is_admin: email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase() && 
+                     username.toLowerCase() === ADMIN_USERNAME.toLowerCase(),
+            is_video_creator: email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase() && 
+                           username.toLowerCase() === ADMIN_USERNAME.toLowerCase()
+          });
           
-        if (updateError) {
-          console.error("Error updating admin privileges:", updateError);
+        if (profileError) {
+          console.error("Profile creation error:", profileError);
+          // Don't fail registration if profile creation fails
         }
+        
+        toast({
+          title: "Success",
+          description: "Account created successfully! You can now log in.",
+        });
+        
+        return { success: true };
       }
       
-      toast({
-        title: "Success",
-        description: "Your account has been created and you'll be logged in shortly",
-      });
-      
-      return { success: true };
+      return { success: false, error: "Failed to create account" };
     } catch (error: any) {
       console.error("Registration error:", error);
+      
+      // Handle network errors specifically
+      if (error.message?.includes('fetch') || error.message?.includes('network')) {
+        return { success: false, error: "Network connection error. Please check your internet connection and try again." };
+      }
+      
       return { success: false, error: error.message || "Registration failed" };
     }
   };

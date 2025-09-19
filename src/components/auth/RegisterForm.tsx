@@ -78,8 +78,8 @@ export function RegisterForm() {
       
       if (success) {
         toast({
-          title: "Success",
-          description: "Registration successful! Please check your email to verify your account.",
+          title: "Success", 
+          description: "Registration successful! You can now log in.",
         });
         
         // Clear form
@@ -89,16 +89,25 @@ export function RegisterForm() {
         setUsername("");
         setCaptchaAnswer("");
         setCaptcha(generateCaptcha());
+        setRegisterError(null);
       } else {
-        setRegisterError(error || "Failed to create account. Please try again.");
+        const errorMessage = error || "Failed to create account. Please try again.";
+        setRegisterError(errorMessage);
         
         // Generate a new captcha
         setCaptcha(generateCaptcha());
         setCaptchaAnswer("");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration error:", error);
-      setRegisterError("Something went wrong during registration. Please try again.");
+      const errorMessage = error?.message?.includes('fetch') || error?.message?.includes('network') 
+        ? "Network connection error. Please check your internet connection and try again."
+        : "Something went wrong during registration. Please try again.";
+      setRegisterError(errorMessage);
+      
+      // Generate a new captcha
+      setCaptcha(generateCaptcha());
+      setCaptchaAnswer("");
     } finally {
       setIsLoading(false);
     }
